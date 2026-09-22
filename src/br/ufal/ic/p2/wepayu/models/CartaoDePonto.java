@@ -4,4 +4,16 @@ public class CartaoDePonto {
     private String data;
     private String horas;
 
+    public CartaoDePonto(String data, String horas){
+        this.data = data;
+        this.horas = horas;
+    }
+
+    public String getData(){
+        return data;
+    }
+
+    public String getHoras(){
+        return horas;
+    }
 }

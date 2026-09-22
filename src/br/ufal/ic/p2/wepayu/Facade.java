@@ -19,12 +19,12 @@ public class Facade {
 
         if(tipo.equals("Horista")){
             Horista novoHorista = new Horista(nome, endereco, tipo, salario);
-            novoBanco.adicionar(novoHorista);
+            novoBanco.adicionarEmpregado(novoHorista);
         }
 
         else {
             Assalariado novoAssalariado = new Assalariado(nome, endereco, tipo, salario);
-            novoBanco.adicionar(novoAssalariado);
+            novoBanco.adicionarEmpregado(novoAssalariado);
         }
 
         id = novoBanco.listaEmpregados.getLast().getId();
@@ -36,7 +36,7 @@ public class Facade {
         String id;
 
         Comissionado novoComissionado = new Comissionado(nome, endereco, tipo, salario, comissao);
-        novoBanco.adicionar(novoComissionado);
+        novoBanco.adicionarEmpregado(novoComissionado);
 
         id = novoBanco.listaEmpregados.getLast().getId();
 
@@ -47,8 +47,12 @@ public class Facade {
         novoBanco.remover(id);
     }
 
-    public void lancaCartao(String id, String data, String horas){
+    public void lancaCartao(String id, String data, String horas) throws EmpregadoNaoExisteException{
+        novoBanco.lancaCartao(id, data, horas);
+    }
 
+    public void lancaVenda(String id, String data, String valor) throws EmpregadoNaoExisteException{
+        novoBanco.lancaVenda(id, data, valor);
     }
 
     public String getAtributoEmpregado(String id,String atributo) throws EmpregadoNaoExisteException {
