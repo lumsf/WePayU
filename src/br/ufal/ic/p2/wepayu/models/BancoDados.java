@@ -5,7 +5,7 @@ import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoExisteException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Banco {
+public class BancoDados {
     public List<Empregado> listaEmpregados = new ArrayList<>();
     int i = 0;
 
@@ -39,6 +39,10 @@ public class Banco {
         throw new EmpregadoNaoExisteException();
     }
 
+    public void alteraEmpregado(String id, String atributo, String valor) throws EmpregadoNaoExisteException {
+
+    }
+
     public void lancaCartao(String id, String data, String horas) throws EmpregadoNaoExisteException{
         for(int j = 0; j < listaEmpregados.size(); j++){
             if(listaEmpregados.get(j).getId().equals(id)){
@@ -55,6 +59,17 @@ public class Banco {
             if(listaEmpregados.get(j).getId().equals(id)){
                 Venda venda = new Venda(data, valor);
                 listaEmpregados.get(j).adicionarVenda(venda);
+                return;
+            }
+        }
+        throw new EmpregadoNaoExisteException();
+    }
+
+    public void lancaTaxaServico(String id, String data, String valor) throws EmpregadoNaoExisteException{
+        for(int j = 0; j < listaEmpregados.size(); j++){
+            if(listaEmpregados.get(j).getId().equals(id)){
+                TaxaServico taxaServico = new TaxaServico(data, valor);
+                listaEmpregados.get(j).adicionarTaxaServico(taxaServico);
                 return;
             }
         }

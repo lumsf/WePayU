@@ -3,13 +3,8 @@ package br.ufal.ic.p2.wepayu;
 import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoExisteException;
 import br.ufal.ic.p2.wepayu.models.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 public class Facade {
-    Banco novoBanco = new Banco();
+    BancoDados novoBancoDados = new BancoDados();
 
     public void zerarSistema(){
     }
@@ -19,15 +14,15 @@ public class Facade {
 
         if(tipo.equals("Horista")){
             Horista novoHorista = new Horista(nome, endereco, tipo, salario);
-            novoBanco.adicionarEmpregado(novoHorista);
+            novoBancoDados.adicionarEmpregado(novoHorista);
         }
 
         else {
             Assalariado novoAssalariado = new Assalariado(nome, endereco, tipo, salario);
-            novoBanco.adicionarEmpregado(novoAssalariado);
+            novoBancoDados.adicionarEmpregado(novoAssalariado);
         }
 
-        id = novoBanco.listaEmpregados.getLast().getId();
+        id = novoBancoDados.listaEmpregados.getLast().getId();
 
         return id;
     }
@@ -36,23 +31,27 @@ public class Facade {
         String id;
 
         Comissionado novoComissionado = new Comissionado(nome, endereco, tipo, salario, comissao);
-        novoBanco.adicionarEmpregado(novoComissionado);
+        novoBancoDados.adicionarEmpregado(novoComissionado);
 
-        id = novoBanco.listaEmpregados.getLast().getId();
+        id = novoBancoDados.listaEmpregados.getLast().getId();
 
         return id;
     }
 
     public void removerEmpregado (String id) throws EmpregadoNaoExisteException {
-        novoBanco.remover(id);
+        novoBancoDados.remover(id);
     }
 
     public void lancaCartao(String id, String data, String horas) throws EmpregadoNaoExisteException{
-        novoBanco.lancaCartao(id, data, horas);
+        novoBancoDados.lancaCartao(id, data, horas);
     }
 
     public void lancaVenda(String id, String data, String valor) throws EmpregadoNaoExisteException{
-        novoBanco.lancaVenda(id, data, valor);
+        novoBancoDados.lancaVenda(id, data, valor);
+    }
+
+    public void lancaTaxaServico(String id, String data, String valor) throws EmpregadoNaoExisteException{
+        novoBancoDados.lancaTaxaServico(id, data, valor);
     }
 
     public String getAtributoEmpregado(String id,String atributo) throws EmpregadoNaoExisteException {
