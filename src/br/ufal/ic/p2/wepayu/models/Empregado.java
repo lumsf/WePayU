@@ -1,6 +1,8 @@
 package br.ufal.ic.p2.wepayu.models;
 
 import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoExisteException;
+import br.ufal.ic.p2.wepayu.Exception.EnderecoNaoPodeSerNuloException;
+import br.ufal.ic.p2.wepayu.Exception.NomeNaoPodeSerNuloException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,14 +21,22 @@ public class Empregado {
     private String agencia;
     private String contaCorrente;
 
+    private List<CartaoDePonto> listaCartoes = new ArrayList<>();
+    private List<Venda> listaVendas = new ArrayList<>();
+    private List<TaxaServico> listaTaxaServico = new ArrayList<>();
+
+    public Empregado(){}
+
+
     public Empregado(String nome, String endereco, String tipo, String salario) throws EmpregadoNaoExisteException {
+        if(nome == null || nome.isEmpty()) throw new NomeNaoPodeSerNuloException();
+        if(endereco == null || endereco.isEmpty()) throw new EnderecoNaoPodeSerNuloException();
+
         this.nome = nome;
         this.endereco = endereco;
         this.tipo = tipo;
         this.salario = salario;
-    }
-
-    public Empregado() {
+        this.sindicalizado = "false";
     }
 
     public String getId() {
@@ -77,19 +87,28 @@ public class Empregado {
     public String getContaCorrente(){ return contaCorrente; }
     public void setContaCorrente(String contaCorrente){ this.contaCorrente = contaCorrente; }
 
-    private List<CartaoDePonto> listaCartoes = new ArrayList<>();
+    public List<CartaoDePonto> getListaCartoes(){return listaCartoes;}
+    public void setListaCartoes(List<CartaoDePonto> listaCartoes){
+        this.listaCartoes = listaCartoes;
+    }
 
     public void adicionarCartao(CartaoDePonto novoCartaoDePonto){
         listaCartoes.add(novoCartaoDePonto);
     }
 
-    private List<Venda> listaVendas = new ArrayList<>();
+    public List<Venda> getListaVendas(){return listaVendas;}
+    public void setListaVendas(List<Venda> listaVendas){
+        this.listaVendas = listaVendas;
+    }
 
     public void adicionarVenda(Venda novaVenda){
         listaVendas.add(novaVenda);
     }
 
-    private List<TaxaServico> listaTaxaServico = new ArrayList<>();
+    public List<TaxaServico> getListaTaxaServico(){return listaTaxaServico;}
+    public void setListaTaxaServico(List<TaxaServico> listaTaxaServico){
+        this.listaTaxaServico = listaTaxaServico;
+    }
 
     public void adicionarTaxaServico(TaxaServico novaTaxaServico){
         listaTaxaServico.add(novaTaxaServico);
