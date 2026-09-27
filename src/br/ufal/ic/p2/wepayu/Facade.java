@@ -115,6 +115,10 @@ public class Facade {
         return novoBancoDados.getVendasRealizadas(id, dataInicial, dataFinal);
     }
 
+    public String getTaxasServico(String id, String dataInicial, String dataFinal) throws EmpregadoNaoExisteException {
+        return novoBancoDados.getTaxasServico(id, dataInicial, dataFinal);
+    }
+
     public String getAtributoEmpregado(String id,String atributo) throws EmpregadoNaoExisteException {
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
 

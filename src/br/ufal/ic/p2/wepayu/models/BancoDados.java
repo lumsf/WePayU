@@ -87,11 +87,25 @@ public class BancoDados {
     public void alteraEmpregado(String id, String atributo, String valor, String idSindicato, String taxaSindical) throws EmpregadoNaoExisteException {
         Empregado empregado = buscar(id);
 
-        if(atributo.equals("sindicalizado")){
-            empregado.setSindicalizado(valor);
-            empregado.setIdSindicato(idSindicato);
-            empregado.setTaxaSindical(taxaSindical);
+        if(atributo.equals("sindicalizado")) {
+            if (valor.equals("true")) {
+                for (int j = 0; j < listaEmpregados.size(); j++) {
+                    Empregado outro = listaEmpregados.get(j);
+
+                    if (!outro.getId().equals(id)
+                            && outro.getSindicalizado().equals("true")
+                            && outro.getIdSindicato() != null
+                            && outro.getIdSindicato().equals(idSindicato))
+                        throw new HaOutroEmpregadoComEstaIdentificacaoDeSindicatoException();
+                }
+            }
+
+        empregado.setSindicalizado(valor);
+        empregado.setIdSindicato(idSindicato);
+        empregado.setTaxaSindical(taxaSindical);
+
         }
+
         else{
             throw new AtributoNaoExisteException();
         }
@@ -276,15 +290,79 @@ public class BancoDados {
         return resultado;
     }
 
-    public void lancaTaxaServico(String id, String data, String valor) throws EmpregadoNaoExisteException{
+    public void lancaTaxaServico(String membro, String data, String valor) throws MembroNaoExisteException{
+        if(membro == null || membro.isEmpty()) throw new IdentificacaoDoMembroNaoPodeSerNulaException();
+
+        Empregado empregado = null;
+
         for(int j = 0; j < listaEmpregados.size(); j++){
-            if(listaEmpregados.get(j).getId().equals(id)){
-                TaxaServico taxaServico = new TaxaServico(data, valor);
-                listaEmpregados.get(j).adicionarTaxaServico(taxaServico);
-                return;
+            Empregado atual = listaEmpregados.get(j);
+
+            if(atual.getIdSindicato() != null && atual.getIdSindicato().equals(membro)){
+                empregado = atual;
+                break;
             }
         }
-        throw new EmpregadoNaoExisteException();
+
+        if(empregado == null) throw new MembroNaoExisteException();
+
+        validarData(data);
+
+        BigDecimal valorTaxa;
+
+        try{
+            valorTaxa = new BigDecimal(valor.replace(",", "."));
+        }
+        catch (Exception e){
+            throw new ValorDeveSerPositivoException();
+        }
+
+        if(valorTaxa.compareTo(BigDecimal.ZERO) <= 0) throw new ValorDeveSerPositivoException();
+
+        TaxaServico taxaServico = new TaxaServico(data, valor);
+
+        empregado.adicionarTaxaServico(taxaServico);
+    }
+
+    public String getTaxasServico(String id, String dataInicial, String dataFinal) throws EmpregadoNaoExisteException{
+        if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
+
+        Empregado empregado = buscar(id);
+
+        if(!(empregado.getSindicalizado().equals("true"))) throw new EmpregadoNaoEhSindicalizadoException();
+
+        LocalDate inicio;
+        try{
+            inicio = validarData(dataInicial);
+        }
+        catch (DataInvalidaException e){
+            throw new DataInicialInvalidaException();
+        }
+
+        LocalDate fim;
+        try{
+            fim = validarData(dataFinal);
+        }
+        catch (DataInvalidaException e){
+            throw new DataFinalInvalidaException();
+        }
+
+        if(inicio.isAfter(fim)) throw new DataInicialNaoPodeSerPosteriorAaDataFinalException();
+
+        BigDecimal total = BigDecimal.ZERO;
+
+        for(int j = 0; j < empregado.getListaTaxaServico().size(); j++){
+            TaxaServico taxaServico = empregado.getListaTaxaServico().get(j);
+
+            LocalDate dataTaxaServico = validarData(taxaServico.getData());
+
+            if(!dataTaxaServico.isBefore(inicio) && dataTaxaServico.isBefore(fim)){
+                BigDecimal valorTaxa = new BigDecimal(taxaServico.getValor().replace(",", "."));
+
+                total = total.add(valorTaxa);
+            }
+        }
+        return formatarDinheiro(total);
     }
 
     public String getHorasNormaisTrabalhadas(String id, String dataInicial, String dataFinal) throws EmpregadoNaoExisteException{
