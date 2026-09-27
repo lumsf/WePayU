@@ -69,15 +69,29 @@ public class Facade {
         if(atributo.equals("tipo")){
             novoBancoDados.mudaTipoEmpregado(id, valor, null);
         }
+        else if(atributo.equals("metodoPagamento")){
+            novoBancoDados.alteraEmpregado(id, atributo, valor);
+        }
         else{
             novoBancoDados.alteraEmpregado(id, atributo, valor);
         }
     }
 
-    public void alteraEmpregado(String id, String atributo, String valor, String salario) throws EmpregadoNaoExisteException {
+    public void alteraEmpregado(String id, String atributo, String valor, String extra) throws EmpregadoNaoExisteException {
         if(atributo.equals("tipo")){
-            novoBancoDados.mudaTipoEmpregado(id, valor, salario);
+            if(valor.equals("comissionado")){
+                novoBancoDados.mudaTipoEmpregado(id, valor, null, extra);
+            }
+
+            else{
+                novoBancoDados.mudaTipoEmpregado(id, valor, extra);
+            }
         }
+
+        else if(atributo.equals("metodoPagamento")){
+            novoBancoDados.alteraEmpregado(id, atributo, valor, extra, null, null);
+        }
+
         else{
             throw new AtributoNaoExisteException();
         }
@@ -143,18 +157,23 @@ public class Facade {
             return empregado.getSindicalizado();
         }
         else if(atributo.equals("idSindicato")){
+            if(!empregado.getSindicalizado().equals("true")) throw new EmpregadoNaoEhSindicalizadoException();
             return empregado.getIdSindicato();
         }
         else if(atributo.equals("taxaSindical")){
+            if(!empregado.getSindicalizado().equals("true")) throw new EmpregadoNaoEhSindicalizadoException();
             return empregado.getTaxaSindical();
         }
         else if(atributo.equals("banco")){
+            if(!empregado.getMetodoPagamento().equals("banco")) throw new EmpregadoNaoRecebeEmBancoException();
             return empregado.getBanco();
         }
         else if(atributo.equals("agencia")){
+            if(!empregado.getMetodoPagamento().equals("banco")) throw new EmpregadoNaoRecebeEmBancoException();
             return empregado.getAgencia();
         }
         else if(atributo.equals("contaCorrente")){
+            if(!empregado.getMetodoPagamento().equals("banco")) throw new EmpregadoNaoRecebeEmBancoException();
             return empregado.getContaCorrente();
         }
         else if(atributo.equals("comissao")){

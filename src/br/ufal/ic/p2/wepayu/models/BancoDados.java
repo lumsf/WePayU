@@ -5,7 +5,6 @@ import br.ufal.ic.p2.wepayu.Exception.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.math.BigDecimal;
-import java.time.DateTimeException;
 import java.time.LocalDate;
 
 public class BancoDados {
@@ -60,7 +59,9 @@ public class BancoDados {
 
     public void alteraEmpregado(String id, String atributo, String valor) throws EmpregadoNaoExisteException {
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
+
         Empregado e = buscar(id);
+
             if(atributo.equals("nome")){
                 if(valor == null || valor.isEmpty()) throw new NomeNaoPodeSerNuloException();
                 e.setNome(valor);
@@ -77,7 +78,27 @@ public class BancoDados {
                 ((Comissionado) e).setComissao(Validador.formatar(Validador.validarComissao(valor)));
             }
             else if(atributo.equals("sindicalizado")){
+                if (!valor.equals("true") && !valor.equals("false")) throw new ValorDeveSerTrueOuFalseException();
+
                 e.setSindicalizado(valor);
+
+                if (valor.equals("false")) {
+                    e.setIdSindicato(null);
+                    e.setTaxaSindical(null);
+                    return;
+                }
+            }
+            else if(atributo.equals("metodoPagamento")){
+                if(!valor.equals("emMaos") && !valor.equals("banco") && !valor.equals("correios")) throw new MetodoDePagamentoInvalidoException();
+                if(valor.equals("banco")) throw new BancoNaoPodeSerNuloException();
+
+                e.setMetodoPagamento(valor);
+
+                if(valor.equals("emMaos") || valor.equals("correios")){
+                    e.setBanco(null);
+                    e.setAgencia(null);
+                    e.setContaCorrente(null);
+                }
             }
             else{
                 throw new AtributoNaoExisteException();
@@ -87,53 +108,81 @@ public class BancoDados {
     public void alteraEmpregado(String id, String atributo, String valor, String idSindicato, String taxaSindical) throws EmpregadoNaoExisteException {
         Empregado empregado = buscar(id);
 
-        if(atributo.equals("sindicalizado")) {
-            if (valor.equals("true")) {
-                for (int j = 0; j < listaEmpregados.size(); j++) {
-                    Empregado outro = listaEmpregados.get(j);
+        if (!atributo.equals("sindicalizado")) throw new AtributoNaoExisteException();
+        if (!valor.equals("true") && !valor.equals("false")) throw new ValorDeveSerTrueOuFalseException();
 
-                    if (!outro.getId().equals(id)
-                            && outro.getSindicalizado().equals("true")
-                            && outro.getIdSindicato() != null
-                            && outro.getIdSindicato().equals(idSindicato))
-                        throw new HaOutroEmpregadoComEstaIdentificacaoDeSindicatoException();
-                }
-            }
+        if (valor.equals("false")) {
+            empregado.setSindicalizado("false");
+            empregado.setIdSindicato(null);
+            empregado.setTaxaSindical(null);
+            return;
+        }
 
-        empregado.setSindicalizado(valor);
+        if (idSindicato == null || idSindicato.isEmpty()) throw new IdentificacaoDoSindicatoNaoPodeSerNulaException();
+        if (taxaSindical == null || taxaSindical.isEmpty()) throw new TaxaSindicalNulaException();
+
+        String taxaFormatada = Validador.formatar(Validador.validarTaxaSindical(taxaSindical));
+
+        for (int j = 0; j < listaEmpregados.size(); j++) {
+            Empregado outro = listaEmpregados.get(j);
+
+            if (!outro.getId().equals(id)
+                    && outro.getSindicalizado().equals("true")
+                    && outro.getIdSindicato() != null
+                    && outro.getIdSindicato().equals(idSindicato))
+                throw new HaOutroEmpregadoComEstaIdentificacaoDeSindicatoException();
+        }
+
+        empregado.setSindicalizado("true");
         empregado.setIdSindicato(idSindicato);
-        empregado.setTaxaSindical(taxaSindical);
-
-        }
-
-        else{
-            throw new AtributoNaoExisteException();
-        }
+        empregado.setTaxaSindical(taxaFormatada);
     }
 
     public void alteraEmpregado(String id, String atributo, String valor, String banco, String agencia, String contaCorrente) throws EmpregadoNaoExisteException{
         Empregado empregado = buscar(id);
 
-        if(atributo.equals("metodoPagamento") && valor.equals("banco")){
-            empregado.setMetodoPagamento(valor);
-            empregado.setBanco(banco);
-            empregado.setAgencia(agencia);
-            empregado.setContaCorrente(contaCorrente);
+        if(!atributo.equals("metodoPagamento")) throw new AtributoNaoExisteException();
+        if(!valor.equals("banco") && !valor.equals("emMaos")) throw new MetodoDePagamentoInvalidoException();
+
+        if(valor.equals("emMaos")){
+            empregado.setMetodoPagamento("emMaos");
+            empregado.setBanco(null);
+            empregado.setAgencia(null);
+            empregado.setContaCorrente(null);
+            return;
         }
-        else{
-            throw new AtributoNaoExisteException();
-        }
+
+        if(banco == null || banco.isEmpty()) throw new BancoNaoPodeSerNuloException();
+        if(agencia == null || agencia.isEmpty()) throw new AgenciaNaoPodeSerNuloException();
+        if(contaCorrente == null || contaCorrente.isEmpty()) throw new ContaCorrenteNaoPodeSerNuloException();
+
+        empregado.setMetodoPagamento("banco");
+        empregado.setBanco(banco);
+        empregado.setAgencia(agencia);
+        empregado.setContaCorrente(contaCorrente);
     }
 
     public void mudaTipoEmpregado(String id, String novoTipo, String salario) throws EmpregadoNaoExisteException{
         Empregado antigo = buscar(id);
 
+        if(!novoTipo.equals("horista") && !novoTipo.equals("assalariado")) throw new TipoInvalidoException();
+
+        String salarioFormatado;
+
+        if(salario == null){
+            salarioFormatado = Validador.formatar(Validador.validarSalario(antigo.getSalario()));
+        }
+        else{
+            salarioFormatado = Validador.formatar(Validador.validarSalario(salario));
+        }
+
         Empregado novo;
+
         if(novoTipo.equals("horista")){
-            novo = new Horista(antigo.getNome(), antigo.getEndereco(), novoTipo, salario);
+            novo = new Horista(antigo.getNome(), antigo.getEndereco(), novoTipo, salarioFormatado);
         }
         else if(novoTipo.equals("assalariado")){
-            novo = new Assalariado(antigo.getNome(), antigo.getEndereco(), novoTipo, salario);
+            novo = new Assalariado(antigo.getNome(), antigo.getEndereco(), novoTipo, salarioFormatado);
         }
         else{
             throw new TipoInvalidoException();
@@ -148,7 +197,13 @@ public class BancoDados {
     public void mudaTipoEmpregado(String id, String novoTipo, String salario, String comissao) throws EmpregadoNaoExisteException{
         Empregado antigo = buscar(id);
 
-        Comissionado novo = new Comissionado(antigo.getNome(), antigo.getEndereco(), novoTipo, salario, comissao);
+        if(!novoTipo.equals("comissionado")) throw new TipoInvalidoException();
+
+        String salarioFormatado = Validador.formatar(Validador.validarSalario(antigo.getSalario()));
+
+        String comissaoFormatada = Validador.formatar(Validador.validarComissao(comissao));
+
+        Comissionado novo = new Comissionado(antigo.getNome(), antigo.getEndereco(), novoTipo, salarioFormatado, comissaoFormatada);
 
         copiarDadosComuns(antigo, novo);
 

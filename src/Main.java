@@ -27,6 +27,9 @@ public class Main {
         executarTeste(easyAccept, facade, "tests/us5.txt");
         executarTeste(easyAccept, facade, "tests/us5_1.txt");
 
+        executarTeste(easyAccept, facade, "tests/us6.txt");
+        executarTeste(easyAccept, facade, "tests/us6_1.txt");
+
 //        EasyAccept.main(new String[]{facade, "tests/us1.txt"});
 //        EasyAccept.main(new String[]{facade, "tests/us2.txt"});
 //        EasyAccept.main(new String[]{facade, "tests/us2_1.txt"});

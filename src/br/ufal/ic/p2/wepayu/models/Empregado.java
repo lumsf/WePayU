@@ -37,6 +37,7 @@ public class Empregado {
         this.tipo = tipo;
         this.salario = salario;
         this.sindicalizado = "false";
+        this.metodoPagamento = "emMaos";
     }
 
     public String getId() {
