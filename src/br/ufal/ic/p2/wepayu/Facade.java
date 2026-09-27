@@ -133,6 +133,14 @@ public class Facade {
         return novoBancoDados.getTaxasServico(id, dataInicial, dataFinal);
     }
 
+    public void rodaFolha(String data, String saida) throws EmpregadoNaoExisteException {
+        novoBancoDados.rodaFolha(data, saida);
+    }
+
+    public String totalFolha(String data) throws EmpregadoNaoExisteException {
+        return novoBancoDados.totalFolha(data);
+    }
+
     public String getAtributoEmpregado(String id,String atributo) throws EmpregadoNaoExisteException {
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
 

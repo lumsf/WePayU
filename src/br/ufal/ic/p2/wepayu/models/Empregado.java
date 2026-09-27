@@ -20,6 +20,7 @@ public class Empregado {
     private String banco;
     private String agencia;
     private String contaCorrente;
+    private String dataUltimoPagamento;
 
     private List<CartaoDePonto> listaCartoes = new ArrayList<>();
     private List<Venda> listaVendas = new ArrayList<>();
@@ -87,6 +88,9 @@ public class Empregado {
 
     public String getContaCorrente(){ return contaCorrente; }
     public void setContaCorrente(String contaCorrente){ this.contaCorrente = contaCorrente; }
+
+    public String getDataUltimoPagamento(){ return dataUltimoPagamento; }
+    public void setDataUltimoPagamento(String dataUltimoPagamento) { this.dataUltimoPagamento = dataUltimoPagamento; }
 
     public List<CartaoDePonto> getListaCartoes(){return listaCartoes;}
     public void setListaCartoes(List<CartaoDePonto> listaCartoes){

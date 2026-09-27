@@ -2,6 +2,7 @@ package br.ufal.ic.p2.wepayu.models;
 
 import br.ufal.ic.p2.wepayu.Exception.*;
 
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.math.BigDecimal;
@@ -220,6 +221,7 @@ public class BancoDados {
         novo.setSindicalizado(antigo.getSindicalizado());
         novo.setIdSindicato(antigo.getIdSindicato());
         novo.setTaxaSindical(antigo.getTaxaSindical());
+        novo.setDataUltimoPagamento(antigo.getDataUltimoPagamento());
     }
 
     public void zerar(){
@@ -512,5 +514,186 @@ public class BancoDados {
         valor = valor.stripTrailingZeros();
 
         return valor.toPlainString().replace(".", ",");
+    }
+
+    public boolean deveSerPago(Empregado empregado, String data) {
+        LocalDate dataPagamento = validarData(data);
+
+        if (empregado instanceof Horista) {
+            if(dataPagamento.getDayOfWeek().getValue() != 5){
+                return false;
+            }
+
+            for(int j = 0; j < empregado.getListaCartoes().size(); j++){
+                LocalDate dataCartao = validarData(empregado.getListaCartoes().get(j).getData());
+
+                if(!dataCartao.isAfter(dataPagamento)){
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        if (empregado instanceof Comissionado) {
+            return devePagarComissionado(dataPagamento);
+        }
+
+        if (empregado instanceof Assalariado) {
+            return devePagarAssalariado(dataPagamento);
+        }
+        return false;
+    }
+
+    public boolean devePagarAssalariado(LocalDate data) {
+        LocalDate ultimoDia = data.withDayOfMonth(data.lengthOfMonth());
+
+        int diaDaSemana = ultimoDia.getDayOfWeek().getValue();
+
+        if (diaDaSemana == 6) {
+            ultimoDia = ultimoDia.minusDays(1);
+        }
+        else if (diaDaSemana == 7) {
+            ultimoDia = ultimoDia.minusDays(2);
+        }
+
+        return data.equals(ultimoDia);
+    }
+
+    private boolean devePagarComissionado(LocalDate data) {
+        LocalDate primeiroPagamento = LocalDate.of(2005, 1, 14);
+
+        if(data.isBefore(primeiroPagamento)){
+            return false;
+        }
+
+        long dias = ChronoUnit.DAYS.between(primeiroPagamento, data);
+
+        return dias % 14 == 0;
+    }
+
+    public String totalFolha(String data) throws EmpregadoNaoExisteException{
+        LocalDate dataPagamento = validarData(data);
+
+        BigDecimal totalFolha = BigDecimal.ZERO;
+
+        for(int j = 0; j < listaEmpregados.size(); j++){
+            Empregado empregado = listaEmpregados.get(j);
+
+            if(deveSerPago(empregado, data)){
+                BigDecimal pagamento;
+
+                if(empregado instanceof Horista){
+                    pagamento = calcularPagamentoHorista(empregado, dataPagamento);
+                }
+                else if(empregado instanceof Comissionado){
+                    pagamento = calcularPagamentoComissionado(empregado, dataPagamento);
+                }
+                else{
+                    pagamento = calcularPagamentoAssalariado(empregado);
+                }
+
+                pagamento = aplicarDescontosSindicais(empregado, pagamento, dataPagamento);
+
+                totalFolha = totalFolha.add(pagamento);
+            }
+        }
+
+        return formatarDinheiro(totalFolha);
+    }
+
+    private BigDecimal calcularPagamentoHorista(Empregado empregado, LocalDate dataPagamento){
+        BigDecimal salarioHora = new BigDecimal(empregado.getSalario().replace(",", "."));
+        BigDecimal horasNormais = BigDecimal.ZERO;
+        BigDecimal horasExtras = BigDecimal.ZERO;
+
+        LocalDate inicio = dataPagamento.minusDays(6);
+
+        for(int j = 0; j < empregado.getListaCartoes().size(); j++){
+            CartaoDePonto cartao = empregado.getListaCartoes().get(j);
+            LocalDate dataCartao = validarData(cartao.getData());
+
+            if(!dataCartao.isBefore(inicio) && !dataCartao.isAfter(dataPagamento)){
+                BigDecimal horas = new BigDecimal(cartao.getHoras().replace(",", "."));
+                if(horas.compareTo(new BigDecimal("8")) <= 0){
+                    horasNormais = horasNormais.add(horas);
+                }
+                else{
+                    horasNormais = horasNormais.add(new BigDecimal("8"));
+
+                    BigDecimal extras = horas.subtract(new BigDecimal("8"));
+
+                    horasExtras = horasExtras.add(extras);
+                }
+            }
+        }
+
+        BigDecimal pagamentoNormal = horasNormais.multiply(salarioHora);
+        BigDecimal pagamentoExtra = horasExtras.multiply(salarioHora).multiply(new BigDecimal("1.5"));
+
+        return pagamentoNormal.add(pagamentoExtra);
+    }
+
+    private BigDecimal calcularPagamentoAssalariado(Empregado empregado){
+        return new BigDecimal(empregado.getSalario().replace(",", "."));
+    }
+
+    private BigDecimal calcularPagamentoComissionado(Empregado empregado, LocalDate dataPagamento){
+        Comissionado comissionado = (Comissionado) empregado;
+
+        BigDecimal salarioMensal = new BigDecimal(comissionado.getSalario().replace(",", "."));
+        BigDecimal salarioDuasSemanas = salarioMensal.multiply(new BigDecimal("12")).divide(new BigDecimal("26"), 2, BigDecimal.ROUND_HALF_UP);
+        BigDecimal percentualComissao = new BigDecimal(comissionado.getComissao().replace(",", "."));
+
+        LocalDate inicio = dataPagamento.minusDays(13);
+
+        BigDecimal totalVendas = BigDecimal.ZERO;
+
+        for(int j = 0; j < comissionado.getListaVendas().size(); j++){
+            Venda venda = comissionado.getListaVendas().get(j);
+            LocalDate dataVenda = validarData(venda.getData());
+
+            if(!dataVenda.isBefore(inicio) && !dataVenda.isAfter(dataPagamento)){
+                BigDecimal valorVenda = new BigDecimal(venda.getValor().replace(",", "."));
+
+                totalVendas = totalVendas.add(valorVenda);
+            }
+        }
+
+        BigDecimal comissao = totalVendas.multiply(percentualComissao);
+
+        return salarioDuasSemanas.add(comissao);
+    }
+
+    private BigDecimal aplicarDescontosSindicais(Empregado empregado, BigDecimal pagamento, LocalDate dataPagamento){
+        if(!empregado.getSindicalizado().equals("true")){
+            return pagamento;
+        }
+
+        LocalDate inicio;
+
+        if(empregado instanceof Horista){
+            inicio = dataPagamento.minusDays(6);
+        }
+        else if(empregado instanceof Comissionado){
+            inicio = dataPagamento.minusDays(13);
+        }
+        else{
+            inicio = dataPagamento.withDayOfMonth(1);
+        }
+
+        if(empregado.getTaxaSindical() != null){
+            BigDecimal taxaDiaria = new BigDecimal(empregado.getTaxaSindical().replace(",", "."));
+
+            long quantidadeDias = ChronoUnit.DAYS.between(inicio, dataPagamento) + 1;
+
+            BigDecimal taxaSindical = taxaDiaria.multiply(BigDecimal.valueOf(quantidadeDias));
+
+            pagamento = pagamento.subtract(taxaSindical);
+        }
+        return pagamento;
+    }
+
+    public void rodaFolha(String data, String saida) throws EmpregadoNaoExisteException {
+        totalFolha(data);
     }
 }
