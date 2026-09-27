@@ -53,6 +53,7 @@ public class Facade {
     }
 
     public void lancaCartao(String id, String data, String horas) throws EmpregadoNaoExisteException{
+        if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
         novoBancoDados.lancaCartao(id, data, horas);
     }
 
@@ -100,6 +101,14 @@ public class Facade {
 
     public String getEmpregadoPorNome(String nome, int indice){
         return novoBancoDados.buscarPorNome(nome, indice);
+    }
+
+    public String getHorasNormaisTrabalhadas(String id, String dataInicial, String dataFinal) throws EmpregadoNaoExisteException{
+        return novoBancoDados.getHorasNormaisTrabalhadas(id, dataInicial, dataFinal);
+    }
+
+    public String getHorasExtrasTrabalhadas(String id, String dataInicial, String dataFinal) throws EmpregadoNaoExisteException{
+        return novoBancoDados.getHorasExtrasTrabalhadas(id, dataInicial, dataFinal);
     }
 
     public String getAtributoEmpregado(String id,String atributo) throws EmpregadoNaoExisteException {

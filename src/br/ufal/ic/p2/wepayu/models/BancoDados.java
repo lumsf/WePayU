@@ -4,6 +4,9 @@ import br.ufal.ic.p2.wepayu.Exception.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.math.BigDecimal;
+import java.time.DateTimeException;
+import java.time.LocalDate;
 
 public class BancoDados {
     public List<Empregado> listaEmpregados = new ArrayList<>();
@@ -18,7 +21,6 @@ public class BancoDados {
         novoEmpregado.setId(id);
 
         listaEmpregados.add(novoEmpregado);
-
     }
 
     public void remover(String id) throws EmpregadoNaoExisteException {
@@ -157,14 +159,45 @@ public class BancoDados {
     }
 
     public void lancaCartao(String id, String data, String horas) throws EmpregadoNaoExisteException{
-        for(int j = 0; j < listaEmpregados.size(); j++){
-            if(listaEmpregados.get(j).getId().equals(id)){
-                CartaoDePonto cartao = new CartaoDePonto(data, horas);
-                listaEmpregados.get(j).adicionarCartao(cartao);
-                return;
-            }
+        if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
+
+        Empregado empregado = buscar(id);
+
+        if(!(empregado instanceof Horista)) throw new EmpregadoNaoEhHoristaException();
+
+        validarData(data);
+
+        BigDecimal quantidadeHoras;
+
+        try{
+            quantidadeHoras = new BigDecimal(horas.replace(",", "."));
         }
-        throw new EmpregadoNaoExisteException();
+        catch (Exception e) {
+            throw new HorasDevemSerPositivasException();
+        }
+
+        if(quantidadeHoras.compareTo(BigDecimal.ZERO) <= 0) throw new HorasDevemSerPositivasException();
+
+        CartaoDePonto cartao = new CartaoDePonto(data, horas);
+        empregado.adicionarCartao(cartao);
+    }
+
+    private LocalDate validarData(String data){
+        try{
+            String[] partes = data.split("/");
+
+            if(partes.length != 3) throw new DataInvalidaException();
+
+            int dia = Integer.parseInt(partes[0]);
+            int mes = Integer.parseInt(partes[1]);
+            int ano = Integer.parseInt(partes[2]);
+
+            return LocalDate.of(ano, mes, dia);
+        }
+        catch(Exception e){
+            if(e instanceof DataInvalidaException) throw (DataInvalidaException) e;
+            throw new DataInvalidaException();
+        }
     }
 
     public void lancaVenda(String id, String data, String valor) throws EmpregadoNaoExisteException{
@@ -187,5 +220,99 @@ public class BancoDados {
             }
         }
         throw new EmpregadoNaoExisteException();
+    }
+
+    public String getHorasNormaisTrabalhadas(String id, String dataInicial, String dataFinal) throws EmpregadoNaoExisteException{
+        if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
+
+        Empregado empregado = buscar(id);
+
+        if(!(empregado instanceof Horista)) throw new EmpregadoNaoEhHoristaException();
+
+        LocalDate inicio;
+        try{
+            inicio = validarData(dataInicial);
+        }
+        catch (DataInvalidaException e){
+            throw new DataInicialInvalidaException();
+        }
+
+        LocalDate fim;
+        try{
+            fim = validarData(dataFinal);
+        }
+        catch (DataInvalidaException e){
+            throw new DataFinalInvalidaException();
+        }
+
+        if(inicio.isAfter(fim)) throw new DataInicialNaoPodeSerPosteriorAaDataFinalException();
+
+        BigDecimal total = BigDecimal.ZERO;
+
+        for(int j = 0; j < empregado.getListaCartoes().size(); j++){
+            CartaoDePonto cartaoDePonto = empregado.getListaCartoes().get(j);
+
+            LocalDate dataCartao = validarData(cartaoDePonto.getData());
+
+            if(!dataCartao.isBefore(inicio) && dataCartao.isBefore(fim)){
+                BigDecimal horas = new BigDecimal(cartaoDePonto.getHoras().replace(",", "."));
+
+                if(horas.compareTo(new BigDecimal("8")) <= 0) total = total.add(horas);
+                else{
+                    total = total.add(new BigDecimal("8"));
+                }
+            }
+        }
+        return formatarHoras(total);
+    }
+
+    public String getHorasExtrasTrabalhadas(String id, String dataInicial, String dataFinal) throws EmpregadoNaoExisteException{
+        if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
+
+        Empregado empregado = buscar(id);
+
+        if(!(empregado instanceof Horista)) throw new EmpregadoNaoEhHoristaException();
+
+        LocalDate inicio;
+        try{
+            inicio = validarData(dataInicial);
+        }
+        catch (DataInvalidaException e){
+            throw new DataInicialInvalidaException();
+        }
+
+        LocalDate fim;
+        try{
+            fim = validarData(dataFinal);
+        }
+        catch (DataInvalidaException e){
+            throw new DataFinalInvalidaException();
+        }
+
+        if(inicio.isAfter(fim)) throw new DataInicialNaoPodeSerPosteriorAaDataFinalException();
+
+        BigDecimal total = BigDecimal.ZERO;
+
+        for(int j = 0; j < empregado.getListaCartoes().size(); j++){
+            CartaoDePonto cartaoDePonto = empregado.getListaCartoes().get(j);
+
+            LocalDate dataCartao = validarData(cartaoDePonto.getData());
+
+            if(!dataCartao.isBefore(inicio) && dataCartao.isBefore(fim)){
+                BigDecimal horas = new BigDecimal(cartaoDePonto.getHoras().replace(",", "."));
+
+                if(horas.compareTo(new BigDecimal("8")) > 0) {
+                    BigDecimal horasExtras = horas.subtract(new BigDecimal("8"));
+                    total = total.add(horasExtras);
+                }
+            }
+        }
+        return formatarHoras(total);
+    }
+
+    private String formatarHoras(BigDecimal valor) {
+        valor = valor.stripTrailingZeros();
+
+        return valor.toPlainString().replace(".", ",");
     }
 }
