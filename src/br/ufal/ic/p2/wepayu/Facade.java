@@ -111,6 +111,10 @@ public class Facade {
         return novoBancoDados.getHorasExtrasTrabalhadas(id, dataInicial, dataFinal);
     }
 
+    public String getVendasRealizadas(String id, String dataInicial, String dataFinal) throws EmpregadoNaoExisteException {
+        return novoBancoDados.getVendasRealizadas(id, dataInicial, dataFinal);
+    }
+
     public String getAtributoEmpregado(String id,String atributo) throws EmpregadoNaoExisteException {
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
 

@@ -201,14 +201,79 @@ public class BancoDados {
     }
 
     public void lancaVenda(String id, String data, String valor) throws EmpregadoNaoExisteException{
-        for(int j = 0; j < listaEmpregados.size(); j++){
-            if(listaEmpregados.get(j).getId().equals(id)){
-                Venda venda = new Venda(data, valor);
-                listaEmpregados.get(j).adicionarVenda(venda);
-                return;
-            }
+        if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
+
+        Empregado empregado = buscar(id);
+
+        if(!(empregado instanceof Comissionado)) throw new EmpregadoNaoComissionadoException();
+
+        validarData(data);
+
+        BigDecimal valorVenda;
+
+        try{
+            valorVenda = new BigDecimal(valor.replace(",", "."));
         }
-        throw new EmpregadoNaoExisteException();
+        catch (Exception e) {
+            throw new ValorDeveSerPositivoException();
+        }
+
+        if(valorVenda.compareTo(BigDecimal.ZERO) <= 0) throw new ValorDeveSerPositivoException();
+
+        Venda venda = new Venda(data, valor);
+        empregado.adicionarVenda(venda);
+
+    }
+
+    public String getVendasRealizadas(String id, String dataInicial, String dataFinal) throws EmpregadoNaoExisteException{
+        if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
+
+        Empregado empregado = buscar(id);
+
+        if(!(empregado instanceof Comissionado)) throw new EmpregadoNaoEhComissionadoException();
+
+        LocalDate inicio;
+        try{
+            inicio = validarData(dataInicial);
+        }
+        catch (DataInvalidaException e){
+            throw new DataInicialInvalidaException();
+        }
+
+        LocalDate fim;
+        try{
+            fim = validarData(dataFinal);
+        }
+        catch (DataInvalidaException e){
+            throw new DataFinalInvalidaException();
+        }
+
+        if(inicio.isAfter(fim)) throw new DataInicialNaoPodeSerPosteriorAaDataFinalException();
+
+        BigDecimal total = BigDecimal.ZERO;
+
+        for(int j = 0; j < empregado.getListaVendas().size(); j++){
+            Venda venda = empregado.getListaVendas().get(j);
+
+            LocalDate dataVenda = validarData(venda.getData());
+
+            if(!dataVenda.isBefore(inicio) && dataVenda.isBefore(fim)){
+                BigDecimal valor = new BigDecimal(venda.getValor().replace(",", "."));
+
+                total = total.add(valor);
+                }
+            }
+        return formatarDinheiro(total);
+    }
+
+    private String formatarDinheiro(BigDecimal valor){
+        valor = valor.setScale(2, BigDecimal.ROUND_HALF_UP);
+
+        String resultado = valor.toString();
+
+        resultado = resultado.replace(".", ",");
+
+        return resultado;
     }
 
     public void lancaTaxaServico(String id, String data, String valor) throws EmpregadoNaoExisteException{
