@@ -6,10 +6,6 @@ import br.ufal.ic.p2.wepayu.models.*;
 public class Facade {
     BancoDados novoBancoDados = new BancoDados();
 
-    public void zerarSistema(){
-        novoBancoDados.zerar();
-    }
-
     public String criarEmpregado(String nome, String endereco, String tipo, String salario) throws Exception {
         if(nome == null || nome.isEmpty()) throw new NomeNaoPodeSerNuloException();
         if(endereco == null || endereco.isEmpty()) throw new EnderecoNaoPodeSerNuloException();
@@ -191,7 +187,31 @@ public class Facade {
         throw new AtributoNaoExisteException();
     }
 
-    public void encerrarSistema(){
+    public void undo() throws Exception {
+        novoBancoDados.undo();
+    }
 
+    public void redo() throws Exception {
+        novoBancoDados.redo();
+    }
+
+    public String getNumeroDeEmpregados() throws Exception {
+        verificarEncerrado();
+        return String.valueOf(novoBancoDados.getNumeroDeEmpregados());
+    }
+
+    private boolean encerrado = false;
+
+    private void verificarEncerrado() throws Exception {
+        if (encerrado) throw new Exception("Nao pode dar comandos depois de encerrarSistema.");
+    }
+
+    public void encerrarSistema(){
+        encerrado = true;
+    }
+
+    public void zerarSistema() throws Exception {
+        encerrado = false;
+        novoBancoDados.zerar();
     }
 }

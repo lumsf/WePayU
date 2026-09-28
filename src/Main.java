@@ -31,6 +31,7 @@ public class Main {
         executarTeste(easyAccept, facade, "tests/us6_1.txt");
 
         executarTeste(easyAccept, facade, "tests/us7.txt");
+        executarTeste(easyAccept, facade, "tests/us8.txt");
 
 //        EasyAccept.main(new String[]{facade, "tests/us1.txt"});
 //        EasyAccept.main(new String[]{facade, "tests/us2.txt"});
