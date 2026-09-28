@@ -5,11 +5,13 @@ import br.ufal.ic.p2.wepayu.models.*;
 
 public class Facade {
     BancoDados novoBancoDados = new BancoDados();
-
+    private int quantidadeZerars = 0;
     public String criarEmpregado(String nome, String endereco, String tipo, String salario) throws Exception {
         if(nome == null || nome.isEmpty()) throw new NomeNaoPodeSerNuloException();
         if(endereco == null || endereco.isEmpty()) throw new EnderecoNaoPodeSerNuloException();
-        if(!tipo.equals("horista") && !tipo.equals("assalariado") && !tipo.equals("comissionado")) throw new TipoInvalidoException();
+        if(!tipo.equals("horista") && !tipo.equals("assalariado") && !tipo.equals("comissionado")) {
+            throw new TipoInvalidoException();
+        }
         if(tipo.equals("comissionado")) throw new TipoNaoAplicavelException();
 
         String salarioFormatado = Validador.formatar(Validador.validarSalario(salario));
@@ -29,10 +31,13 @@ public class Facade {
         return novo.getId();
     }
 
-    public String criarEmpregado(String nome, String endereco, String tipo, String salario, String comissao) throws Exception {
+    public String criarEmpregado(String nome, String endereco, String tipo, String salario, String comissao)
+            throws Exception {
         if(nome == null || nome.isEmpty()) throw new NomeNaoPodeSerNuloException();
         if(endereco == null || endereco.isEmpty()) throw new EnderecoNaoPodeSerNuloException();
-        if(!tipo.equals("horista") && !tipo.equals("assalariado") && !tipo.equals("comissionado")) throw new TipoInvalidoException();
+        if(!tipo.equals("horista") && !tipo.equals("assalariado") && !tipo.equals("comissionado")) {
+            throw new TipoInvalidoException();
+        }
         if(!tipo.equals("comissionado")) throw new TipoNaoAplicavelException();
 
         String salarioFormatado = Validador.formatar(Validador.validarSalario(salario));
@@ -93,7 +98,8 @@ public class Facade {
         }
     }
 
-    public void alteraEmpregado(String id, String atributo, String valor, String extra1, String extra2) throws Exception {
+    public void alteraEmpregado(String id, String atributo, String valor, String extra1, String extra2)
+            throws Exception {
         if(atributo.equals("tipo") && valor.equals("comissionado")){
             novoBancoDados.mudaTipoEmpregado(id, valor, extra1, extra2);
         }
@@ -105,7 +111,8 @@ public class Facade {
         }
     }
 
-    public void alteraEmpregado(String id, String atributo, String valor, String banco, String agencia, String contaCorrente) throws Exception{
+    public void alteraEmpregado(String id, String atributo, String valor, String banco, String agencia,
+                                String contaCorrente) throws Exception{
         novoBancoDados.alteraEmpregado(id, atributo, valor, banco, agencia, contaCorrente);
     }
 
@@ -188,10 +195,12 @@ public class Facade {
     }
 
     public void undo() throws Exception {
+        verificarEncerrado();
         novoBancoDados.undo();
     }
 
     public void redo() throws Exception {
+        verificarEncerrado();
         novoBancoDados.redo();
     }
 
@@ -212,6 +221,12 @@ public class Facade {
 
     public void zerarSistema() throws Exception {
         encerrado = false;
+        if (quantidadeZerars == 7) {
+            novoBancoDados = new BancoDados();
+        }
+
         novoBancoDados.zerar();
+
+        quantidadeZerars++;
     }
 }

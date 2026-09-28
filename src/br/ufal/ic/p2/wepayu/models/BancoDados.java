@@ -3,7 +3,6 @@ package br.ufal.ic.p2.wepayu.models;
 import br.ufal.ic.p2.wepayu.Exception.*;
 
 import java.io.BufferedWriter;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Locale;
@@ -267,17 +266,9 @@ public class BancoDados {
     }
 
     public void zerar() throws Exception {
-        if (!listaEmpregados.isEmpty()) {
-            salvarEstado();
-            listaEmpregados.clear();
-            contador = 0;
-            return;
-        }
-
+        salvarEstado();
         listaEmpregados.clear();
         contador = 0;
-        pilhaUndo.clear();
-        pilhaRedo.clear();
     }
 
     public void lancaCartao(String id, String data, String horas) throws Exception{
@@ -823,6 +814,8 @@ public class BancoDados {
 
     public void rodaFolha(String data, String saida) throws Exception  {
         LocalDate dataPagamento = validarData(data);
+
+        salvarEstado();
 
         List<Empregado> ordenados = new ArrayList<>(listaEmpregados);
         ordenados.sort((a, b) -> a.getNome().compareTo(b.getNome()));
