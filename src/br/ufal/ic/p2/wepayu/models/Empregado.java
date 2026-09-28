@@ -4,6 +4,8 @@ import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoExisteException;
 import br.ufal.ic.p2.wepayu.Exception.EnderecoNaoPodeSerNuloException;
 import br.ufal.ic.p2.wepayu.Exception.NomeNaoPodeSerNuloException;
 
+import javax.swing.plaf.basic.BasicIconFactory;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,6 +23,7 @@ public class Empregado {
     private String agencia;
     private String contaCorrente;
     private String dataUltimoPagamento;
+    private BigDecimal descontosPendentes;
 
     private List<CartaoDePonto> listaCartoes = new ArrayList<>();
     private List<Venda> listaVendas = new ArrayList<>();
@@ -91,6 +94,9 @@ public class Empregado {
 
     public String getDataUltimoPagamento(){ return dataUltimoPagamento; }
     public void setDataUltimoPagamento(String dataUltimoPagamento) { this.dataUltimoPagamento = dataUltimoPagamento; }
+
+    public BigDecimal getDescontosPendentes(){ return descontosPendentes;}
+    public void setDescontosPendentes(BigDecimal descontosPendentes){ this.descontosPendentes = descontosPendentes; }
 
     public List<CartaoDePonto> getListaCartoes(){return listaCartoes;}
     public void setListaCartoes(List<CartaoDePonto> listaCartoes){

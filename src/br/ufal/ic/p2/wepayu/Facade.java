@@ -10,7 +10,7 @@ public class Facade {
         novoBancoDados.zerar();
     }
 
-    public String criarEmpregado(String nome, String endereco, String tipo, String salario) throws EmpregadoNaoExisteException {
+    public String criarEmpregado(String nome, String endereco, String tipo, String salario) throws Exception {
         if(nome == null || nome.isEmpty()) throw new NomeNaoPodeSerNuloException();
         if(endereco == null || endereco.isEmpty()) throw new EnderecoNaoPodeSerNuloException();
         if(!tipo.equals("horista") && !tipo.equals("assalariado") && !tipo.equals("comissionado")) throw new TipoInvalidoException();
@@ -33,7 +33,7 @@ public class Facade {
         return novo.getId();
     }
 
-    public String criarEmpregado(String nome, String endereco, String tipo, String salario, String comissao) throws EmpregadoNaoExisteException {
+    public String criarEmpregado(String nome, String endereco, String tipo, String salario, String comissao) throws Exception {
         if(nome == null || nome.isEmpty()) throw new NomeNaoPodeSerNuloException();
         if(endereco == null || endereco.isEmpty()) throw new EnderecoNaoPodeSerNuloException();
         if(!tipo.equals("horista") && !tipo.equals("assalariado") && !tipo.equals("comissionado")) throw new TipoInvalidoException();
@@ -48,24 +48,24 @@ public class Facade {
         return novo.getId();
     }
 
-    public void removerEmpregado (String id) throws EmpregadoNaoExisteException {
+    public void removerEmpregado (String id) throws Exception {
         novoBancoDados.remover(id);
     }
 
-    public void lancaCartao(String id, String data, String horas) throws EmpregadoNaoExisteException{
+    public void lancaCartao(String id, String data, String horas) throws Exception{
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
         novoBancoDados.lancaCartao(id, data, horas);
     }
 
-    public void lancaVenda(String id, String data, String valor) throws EmpregadoNaoExisteException{
+    public void lancaVenda(String id, String data, String valor) throws Exception{
         novoBancoDados.lancaVenda(id, data, valor);
     }
 
-    public void lancaTaxaServico(String id, String data, String valor) throws EmpregadoNaoExisteException{
+    public void lancaTaxaServico(String id, String data, String valor) throws Exception{
         novoBancoDados.lancaTaxaServico(id, data, valor);
     }
 
-    public void alteraEmpregado(String id, String atributo, String valor) throws EmpregadoNaoExisteException {
+    public void alteraEmpregado(String id, String atributo, String valor) throws Exception {
         if(atributo.equals("tipo")){
             novoBancoDados.mudaTipoEmpregado(id, valor, null);
         }
@@ -77,7 +77,7 @@ public class Facade {
         }
     }
 
-    public void alteraEmpregado(String id, String atributo, String valor, String extra) throws EmpregadoNaoExisteException {
+    public void alteraEmpregado(String id, String atributo, String valor, String extra) throws Exception {
         if(atributo.equals("tipo")){
             if(valor.equals("comissionado")){
                 novoBancoDados.mudaTipoEmpregado(id, valor, null, extra);
@@ -97,7 +97,7 @@ public class Facade {
         }
     }
 
-    public void alteraEmpregado(String id, String atributo, String valor, String extra1, String extra2) throws EmpregadoNaoExisteException {
+    public void alteraEmpregado(String id, String atributo, String valor, String extra1, String extra2) throws Exception {
         if(atributo.equals("tipo") && valor.equals("comissionado")){
             novoBancoDados.mudaTipoEmpregado(id, valor, extra1, extra2);
         }
@@ -109,7 +109,7 @@ public class Facade {
         }
     }
 
-    public void alteraEmpregado(String id, String atributo, String valor, String banco, String agencia, String contaCorrente) throws EmpregadoNaoExisteException{
+    public void alteraEmpregado(String id, String atributo, String valor, String banco, String agencia, String contaCorrente) throws Exception{
         novoBancoDados.alteraEmpregado(id, atributo, valor, banco, agencia, contaCorrente);
     }
 
@@ -117,31 +117,31 @@ public class Facade {
         return novoBancoDados.buscarPorNome(nome, indice);
     }
 
-    public String getHorasNormaisTrabalhadas(String id, String dataInicial, String dataFinal) throws EmpregadoNaoExisteException{
+    public String getHorasNormaisTrabalhadas(String id, String dataInicial, String dataFinal) throws Exception{
         return novoBancoDados.getHorasNormaisTrabalhadas(id, dataInicial, dataFinal);
     }
 
-    public String getHorasExtrasTrabalhadas(String id, String dataInicial, String dataFinal) throws EmpregadoNaoExisteException{
+    public String getHorasExtrasTrabalhadas(String id, String dataInicial, String dataFinal) throws Exception{
         return novoBancoDados.getHorasExtrasTrabalhadas(id, dataInicial, dataFinal);
     }
 
-    public String getVendasRealizadas(String id, String dataInicial, String dataFinal) throws EmpregadoNaoExisteException {
+    public String getVendasRealizadas(String id, String dataInicial, String dataFinal) throws Exception {
         return novoBancoDados.getVendasRealizadas(id, dataInicial, dataFinal);
     }
 
-    public String getTaxasServico(String id, String dataInicial, String dataFinal) throws EmpregadoNaoExisteException {
+    public String getTaxasServico(String id, String dataInicial, String dataFinal) throws Exception {
         return novoBancoDados.getTaxasServico(id, dataInicial, dataFinal);
     }
 
-    public void rodaFolha(String data, String saida) throws EmpregadoNaoExisteException {
+    public void rodaFolha(String data, String saida) throws Exception {
         novoBancoDados.rodaFolha(data, saida);
     }
 
-    public String totalFolha(String data) throws EmpregadoNaoExisteException {
+    public String totalFolha(String data) throws Exception {
         return novoBancoDados.totalFolha(data);
     }
 
-    public String getAtributoEmpregado(String id,String atributo) throws EmpregadoNaoExisteException {
+    public String getAtributoEmpregado(String id,String atributo) throws Exception {
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
 
         Empregado empregado = novoBancoDados.buscar(id);

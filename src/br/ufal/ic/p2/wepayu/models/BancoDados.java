@@ -2,6 +2,11 @@ package br.ufal.ic.p2.wepayu.models;
 
 import br.ufal.ic.p2.wepayu.Exception.*;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Locale;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +28,7 @@ public class BancoDados {
         listaEmpregados.add(novoEmpregado);
     }
 
-    public void remover(String id) throws EmpregadoNaoExisteException {
+    public void remover(String id) throws Exception{
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
         for (int j = 0; j < listaEmpregados.size(); j++) {
             if (listaEmpregados.get(j).getId().equals(id)) {
@@ -35,7 +40,7 @@ public class BancoDados {
         throw new EmpregadoNaoExisteException();
     }
 
-    public Empregado buscar(String id) throws EmpregadoNaoExisteException{
+    public Empregado buscar(String id) throws Exception{
         for(Empregado empregado : listaEmpregados){
             if(empregado.getId().equals(id)){
                 return empregado;
@@ -58,7 +63,7 @@ public class BancoDados {
         throw new NaoHaEmpregadoComEsseNomeException();
     }
 
-    public void alteraEmpregado(String id, String atributo, String valor) throws EmpregadoNaoExisteException {
+    public void alteraEmpregado(String id, String atributo, String valor) throws Exception {
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
 
         Empregado e = buscar(id);
@@ -106,7 +111,7 @@ public class BancoDados {
             }
     }
 
-    public void alteraEmpregado(String id, String atributo, String valor, String idSindicato, String taxaSindical) throws EmpregadoNaoExisteException {
+    public void alteraEmpregado(String id, String atributo, String valor, String idSindicato, String taxaSindical) throws Exception {
         Empregado empregado = buscar(id);
 
         if (!atributo.equals("sindicalizado")) throw new AtributoNaoExisteException();
@@ -139,7 +144,7 @@ public class BancoDados {
         empregado.setTaxaSindical(taxaFormatada);
     }
 
-    public void alteraEmpregado(String id, String atributo, String valor, String banco, String agencia, String contaCorrente) throws EmpregadoNaoExisteException{
+    public void alteraEmpregado(String id, String atributo, String valor, String banco, String agencia, String contaCorrente) throws Exception{
         Empregado empregado = buscar(id);
 
         if(!atributo.equals("metodoPagamento")) throw new AtributoNaoExisteException();
@@ -163,7 +168,7 @@ public class BancoDados {
         empregado.setContaCorrente(contaCorrente);
     }
 
-    public void mudaTipoEmpregado(String id, String novoTipo, String salario) throws EmpregadoNaoExisteException{
+    public void mudaTipoEmpregado(String id, String novoTipo, String salario) throws Exception{
         Empregado antigo = buscar(id);
 
         if(!novoTipo.equals("horista") && !novoTipo.equals("assalariado")) throw new TipoInvalidoException();
@@ -195,7 +200,7 @@ public class BancoDados {
         listaEmpregados.set(idx, novo);
     }
 
-    public void mudaTipoEmpregado(String id, String novoTipo, String salario, String comissao) throws EmpregadoNaoExisteException{
+    public void mudaTipoEmpregado(String id, String novoTipo, String salario, String comissao) throws Exception{
         Empregado antigo = buscar(id);
 
         if(!novoTipo.equals("comissionado")) throw new TipoInvalidoException();
@@ -229,7 +234,7 @@ public class BancoDados {
         contador = 0;
     }
 
-    public void lancaCartao(String id, String data, String horas) throws EmpregadoNaoExisteException{
+    public void lancaCartao(String id, String data, String horas) throws Exception{
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
 
         Empregado empregado = buscar(id);
@@ -271,7 +276,7 @@ public class BancoDados {
         }
     }
 
-    public void lancaVenda(String id, String data, String valor) throws EmpregadoNaoExisteException{
+    public void lancaVenda(String id, String data, String valor) throws Exception{
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
 
         Empregado empregado = buscar(id);
@@ -296,7 +301,7 @@ public class BancoDados {
 
     }
 
-    public String getVendasRealizadas(String id, String dataInicial, String dataFinal) throws EmpregadoNaoExisteException{
+    public String getVendasRealizadas(String id, String dataInicial, String dataFinal) throws Exception{
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
 
         Empregado empregado = buscar(id);
@@ -381,7 +386,7 @@ public class BancoDados {
         empregado.adicionarTaxaServico(taxaServico);
     }
 
-    public String getTaxasServico(String id, String dataInicial, String dataFinal) throws EmpregadoNaoExisteException{
+    public String getTaxasServico(String id, String dataInicial, String dataFinal) throws Exception{
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
 
         Empregado empregado = buscar(id);
@@ -422,7 +427,7 @@ public class BancoDados {
         return formatarDinheiro(total);
     }
 
-    public String getHorasNormaisTrabalhadas(String id, String dataInicial, String dataFinal) throws EmpregadoNaoExisteException{
+    public String getHorasNormaisTrabalhadas(String id, String dataInicial, String dataFinal) throws Exception{
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
 
         Empregado empregado = buscar(id);
@@ -466,7 +471,7 @@ public class BancoDados {
         return formatarHoras(total);
     }
 
-    public String getHorasExtrasTrabalhadas(String id, String dataInicial, String dataFinal) throws EmpregadoNaoExisteException{
+    public String getHorasExtrasTrabalhadas(String id, String dataInicial, String dataFinal) throws Exception{
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
 
         Empregado empregado = buscar(id);
@@ -524,10 +529,13 @@ public class BancoDados {
                 return false;
             }
 
-            for(int j = 0; j < empregado.getListaCartoes().size(); j++){
-                LocalDate dataCartao = validarData(empregado.getListaCartoes().get(j).getData());
+            LocalDate inicio = dataPagamento.minusDays(6);
 
-                if(!dataCartao.isAfter(dataPagamento)){
+            for(int j = 0; j < empregado.getListaCartoes().size(); j++){
+                LocalDate dataCartao =
+                        validarData(empregado.getListaCartoes().get(j).getData());
+
+                if(!dataCartao.isBefore(inicio) && !dataCartao.isAfter(dataPagamento)){
                     return true;
                 }
             }
@@ -571,7 +579,7 @@ public class BancoDados {
         return dias % 14 == 0;
     }
 
-    public String totalFolha(String data) throws EmpregadoNaoExisteException{
+    public String totalFolha(String data) throws Exception{
         LocalDate dataPagamento = validarData(data);
 
         BigDecimal totalFolha = BigDecimal.ZERO;
@@ -591,8 +599,6 @@ public class BancoDados {
                 else{
                     pagamento = calcularPagamentoAssalariado(empregado);
                 }
-
-                pagamento = aplicarDescontosSindicais(empregado, pagamento, dataPagamento);
 
                 totalFolha = totalFolha.add(pagamento);
             }
@@ -640,9 +646,11 @@ public class BancoDados {
     private BigDecimal calcularPagamentoComissionado(Empregado empregado, LocalDate dataPagamento){
         Comissionado comissionado = (Comissionado) empregado;
 
-        BigDecimal salarioMensal = new BigDecimal(comissionado.getSalario().replace(",", "."));
-        BigDecimal salarioDuasSemanas = salarioMensal.multiply(new BigDecimal("12")).divide(new BigDecimal("26"), 2, BigDecimal.ROUND_HALF_UP);
+        BigDecimal salario = new BigDecimal(comissionado.getSalario().replace(",", "."));
         BigDecimal percentualComissao = new BigDecimal(comissionado.getComissao().replace(",", "."));
+        BigDecimal salarioDuasSemanas = salario.multiply(new BigDecimal("12")).divide(new BigDecimal("26"), 10, BigDecimal.ROUND_DOWN);
+
+        salarioDuasSemanas = salarioDuasSemanas.setScale(2, BigDecimal.ROUND_DOWN);
 
         LocalDate inicio = dataPagamento.minusDays(13);
 
@@ -650,6 +658,7 @@ public class BancoDados {
 
         for(int j = 0; j < comissionado.getListaVendas().size(); j++){
             Venda venda = comissionado.getListaVendas().get(j);
+
             LocalDate dataVenda = validarData(venda.getData());
 
             if(!dataVenda.isBefore(inicio) && !dataVenda.isAfter(dataPagamento)){
@@ -659,7 +668,7 @@ public class BancoDados {
             }
         }
 
-        BigDecimal comissao = totalVendas.multiply(percentualComissao);
+        BigDecimal comissao = totalVendas.multiply(percentualComissao).setScale(2, BigDecimal.ROUND_DOWN);
 
         return salarioDuasSemanas.add(comissao);
     }
@@ -693,7 +702,303 @@ public class BancoDados {
         return pagamento;
     }
 
-    public void rodaFolha(String data, String saida) throws EmpregadoNaoExisteException {
-        totalFolha(data);
+    private BigDecimal calcularDescontos(Empregado empregado, LocalDate dataPagamento){
+        BigDecimal descontos = BigDecimal.ZERO;
+
+        if(empregado.getSindicalizado().equals("true") && empregado.getTaxaSindical() != null){
+
+            LocalDate inicio;
+
+            if(empregado instanceof Horista){
+                inicio = dataPagamento.minusDays(6);
+            }
+            else if(empregado instanceof Comissionado){
+                inicio = dataPagamento.minusDays(13);
+            }
+            else{
+                inicio = dataPagamento.withDayOfMonth(1);
+            }
+
+            long dias = ChronoUnit.DAYS.between(inicio, dataPagamento) + 1;
+
+            BigDecimal taxa = new BigDecimal(empregado.getTaxaSindical().replace(",", "."));
+
+            descontos = descontos.add(taxa.multiply(BigDecimal.valueOf(dias)));
+        }
+
+        LocalDate inicioPeriodo;
+
+        if(empregado instanceof Horista){
+            inicioPeriodo = dataPagamento.minusDays(6);
+        }
+        else if(empregado instanceof Comissionado){
+            inicioPeriodo = dataPagamento.minusDays(13);
+        }
+        else{
+            inicioPeriodo = dataPagamento.withDayOfMonth(1);
+        }
+
+        for(int j = 0; j < empregado.getListaTaxaServico().size(); j++){
+            TaxaServico taxaServico = empregado.getListaTaxaServico().get(j);
+
+            LocalDate dataTaxa = validarData(taxaServico.getData());
+
+            if(!dataTaxa.isBefore(inicioPeriodo) && dataTaxa.isBefore(dataPagamento)){
+                BigDecimal valor = new BigDecimal(taxaServico.getValor().replace(",", "."));
+
+                descontos = descontos.add(valor);
+            }
+        }
+
+        return descontos;
+    }
+
+    private String formatarMetodoPagamento(Empregado empregado){
+        if(empregado.getMetodoPagamento().equals("emMaos")){
+            return "Em maos";
+        }
+
+        if(empregado.getMetodoPagamento().equals("correios")){
+            return "Correios, " + empregado.getEndereco();
+        }
+
+        if(empregado.getMetodoPagamento().equals("banco")){
+            return "Banco do Brasil, Ag. " + empregado.getAgencia() + " CC " + empregado.getContaCorrente();
+        }
+
+        return "";
+    }
+
+    public void rodaFolha(String data, String saida) throws Exception  {
+        LocalDate dataPagamento = validarData(data);
+
+        List<Empregado> ordenados = new ArrayList<>(listaEmpregados);
+        ordenados.sort((a, b) -> a.getNome().compareTo(b.getNome()));
+
+        try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(saida))) {
+            writer.write("FOLHA DE PAGAMENTO DO DIA " + dataPagamento);
+            writer.newLine();
+
+            writer.write("====================================");
+            writer.newLine();
+            writer.newLine();
+
+            writer.write("===============================================================================================================================");
+            writer.newLine();
+            writer.write("===================== HORISTAS ================================================================================================");
+            writer.newLine();
+            writer.write("===============================================================================================================================");
+            writer.newLine();
+
+            writer.write("Nome                                 Horas Extra Salario Bruto Descontos Salario Liquido Metodo");
+            writer.newLine();
+
+            writer.write("==================================== ===== ===== ============= ========= =============== ======================================");
+            writer.newLine();
+
+            int totalHorasNormais = 0;
+            int totalHorasExtras = 0;
+            BigDecimal totalBrutoHoristas = BigDecimal.ZERO;
+            BigDecimal totalDescontosHoristas = BigDecimal.ZERO;
+            BigDecimal totalLiquidoHoristas = BigDecimal.ZERO;
+
+            if (dataPagamento.getDayOfWeek().getValue() == 5) {
+                for (int j = 0; j < ordenados.size(); j++) {
+                    Empregado empregado = ordenados.get(j);
+
+                    if (empregado instanceof Horista) {
+                        int horasNormais = 0;
+                        int horasExtras = 0;
+
+                        LocalDate inicio = dataPagamento.minusDays(6);
+                        BigDecimal salarioHora = new BigDecimal(empregado.getSalario().replace(",", "."));
+
+                        for (int k = 0; k < empregado.getListaCartoes().size(); k++) {
+                            CartaoDePonto cartao = empregado.getListaCartoes().get(k);
+                            LocalDate dataCartao = validarData(cartao.getData());
+
+                            if (!dataCartao.isBefore(inicio) && !dataCartao.isAfter(dataPagamento)) {
+                                BigDecimal horas = new BigDecimal(cartao.getHoras().replace(",", "."));
+                                if (horas.compareTo(new BigDecimal("8")) <= 0) {
+                                    horasNormais += horas.intValue();
+                                } else {
+                                    horasNormais += 8;
+                                    horasExtras += horas.subtract(new BigDecimal("8")).intValue();
+                                }
+                            }
+                        }
+
+                        BigDecimal pagamentoNormal = salarioHora.multiply(BigDecimal.valueOf(horasNormais));
+                        BigDecimal pagamentoExtra = salarioHora.multiply(BigDecimal.valueOf(horasExtras)).multiply(new BigDecimal("1.5"));
+                        BigDecimal bruto = pagamentoNormal.add(pagamentoExtra);
+
+                        BigDecimal taxasServicoPeriodo = BigDecimal.ZERO;
+                        for (int k = 0; k < empregado.getListaTaxaServico().size(); k++) {
+                            TaxaServico ts = empregado.getListaTaxaServico().get(k);
+                            LocalDate dataTaxa = validarData(ts.getData());
+                            if (!dataTaxa.isBefore(inicio) && dataTaxa.isBefore(dataPagamento)) {
+                                taxasServicoPeriodo = taxasServicoPeriodo.add(new BigDecimal(ts.getValor().replace(",", ".")));
+                            }
+                        }
+
+                        BigDecimal devidoSemana = BigDecimal.ZERO;
+                        if (empregado.getSindicalizado().equals("true") && empregado.getTaxaSindical() != null) {
+                            BigDecimal taxaDiaria = new BigDecimal(empregado.getTaxaSindical().replace(",", "."));
+                            devidoSemana = taxaDiaria.multiply(BigDecimal.valueOf(7));
+                        }
+
+                        BigDecimal dividaAnterior = empregado.getDescontosPendentes() == null ? BigDecimal.ZERO : empregado.getDescontosPendentes();
+                        BigDecimal totalDevido = devidoSemana.add(dividaAnterior).add(taxasServicoPeriodo);
+
+                        BigDecimal descontos;
+                        BigDecimal liquido;
+
+                        if (bruto.compareTo(totalDevido) >= 0) {
+                            descontos = totalDevido;
+                            liquido = bruto.subtract(descontos);
+                            empregado.setDescontosPendentes(BigDecimal.ZERO);
+                        } else {
+                            descontos = bruto;
+                            liquido = BigDecimal.ZERO;
+                            empregado.setDescontosPendentes(totalDevido.subtract(bruto));
+                        }
+
+                        totalHorasNormais += horasNormais;
+                        totalHorasExtras += horasExtras;
+                        totalBrutoHoristas = totalBrutoHoristas.add(bruto);
+                        totalDescontosHoristas = totalDescontosHoristas.add(descontos);
+                        totalLiquidoHoristas = totalLiquidoHoristas.add(liquido);
+
+                        String metodo = formatarMetodoPagamento(empregado);
+
+                        writer.write(String.format(Locale.US, "%-36s %5d %5d %13s %9s %15s %-38s",
+                                empregado.getNome(), horasNormais, horasExtras,
+                                formatarDinheiro(bruto), formatarDinheiro(descontos), formatarDinheiro(liquido), metodo));
+                        writer.newLine();
+                    }
+                }
+            }
+
+            writer.newLine();
+
+            writer.write(String.format(Locale.US, "TOTAL HORISTAS %27d %5d %13s %9s %15s", totalHorasNormais, totalHorasExtras, formatarDinheiro(totalBrutoHoristas), formatarDinheiro(totalDescontosHoristas), formatarDinheiro(totalLiquidoHoristas)));
+            writer.newLine();
+            writer.newLine();
+
+            writer.write("===============================================================================================================================");
+            writer.newLine();
+            writer.write("===================== ASSALARIADOS ============================================================================================");
+            writer.newLine();
+            writer.write("===============================================================================================================================");
+            writer.newLine();
+
+            writer.write("Nome                                             Salario Bruto Descontos Salario Liquido Metodo");
+            writer.newLine();
+
+            writer.write("================================================ ============= ========= =============== ======================================");
+            writer.newLine();
+
+            BigDecimal totalBrutoAssalariados = BigDecimal.ZERO;
+            BigDecimal totalDescontosAssalariados = BigDecimal.ZERO;
+            BigDecimal totalLiquidoAssalariados = BigDecimal.ZERO;
+
+            for(int j = 0; j < ordenados.size(); j++){
+                Empregado empregado = ordenados.get(j);
+
+                if(empregado instanceof Assalariado && deveSerPago(empregado, data)){
+                    BigDecimal bruto = calcularPagamentoAssalariado(empregado);
+                    BigDecimal descontos = calcularDescontos(empregado, dataPagamento);
+                    BigDecimal liquido = bruto.subtract(descontos);
+
+                    totalBrutoAssalariados = totalBrutoAssalariados.add(bruto);
+                    totalDescontosAssalariados = totalDescontosAssalariados.add(descontos);
+                    totalLiquidoAssalariados = totalLiquidoAssalariados.add(liquido);
+
+                    writer.write(String.format(Locale.US, "%-48s %13s %9s %15s %-38s", empregado.getNome(), formatarDinheiro(bruto), formatarDinheiro(descontos), formatarDinheiro(liquido), formatarMetodoPagamento(empregado)));
+
+                    writer.newLine();
+                }
+            }
+
+            writer.newLine();
+
+            writer.write(String.format(Locale.US, "TOTAL ASSALARIADOS %43s %9s %15s", formatarDinheiro(totalBrutoAssalariados), formatarDinheiro(totalDescontosAssalariados), formatarDinheiro(totalLiquidoAssalariados)));            writer.newLine();
+            writer.newLine();
+
+            writer.write("===============================================================================================================================");
+            writer.newLine();
+            writer.write("===================== COMISSIONADOS ===========================================================================================");
+            writer.newLine();
+            writer.write("===============================================================================================================================");
+            writer.newLine();
+
+            writer.write("Nome                  Fixo     Vendas   Comissao Salario Bruto Descontos Salario Liquido Metodo");
+            writer.newLine();
+
+            writer.write("===================== ======== ======== ======== ============= ========= =============== ======================================");
+            writer.newLine();
+
+            BigDecimal totalFixo = BigDecimal.ZERO;
+            BigDecimal totalVendas = BigDecimal.ZERO;
+            BigDecimal totalComissao = BigDecimal.ZERO;
+            BigDecimal totalBrutoComissionados = BigDecimal.ZERO;
+            BigDecimal totalDescontosComissionados = BigDecimal.ZERO;
+            BigDecimal totalLiquidoComissionados = BigDecimal.ZERO;
+
+            for(int j = 0; j < ordenados.size(); j++){
+                Empregado empregado = ordenados.get(j);
+
+                if(empregado instanceof Comissionado && deveSerPago(empregado, data)){
+                    Comissionado comissionado = (Comissionado) empregado;
+
+                    BigDecimal fixo = new BigDecimal(empregado.getSalario().replace(",", ".")).multiply(new BigDecimal("12")).divide(new BigDecimal("26"), 10, BigDecimal.ROUND_DOWN);
+
+                    fixo = fixo.setScale(2, BigDecimal.ROUND_DOWN);
+
+                    LocalDate inicio = dataPagamento.minusDays(13);
+
+                    BigDecimal vendas = BigDecimal.ZERO;
+
+                    for(int k = 0; k < empregado.getListaVendas().size(); k++){
+                        Venda venda = empregado.getListaVendas().get(k);
+                        LocalDate dataVenda = validarData(venda.getData());
+
+                        if(!dataVenda.isBefore(inicio) && !dataVenda.isAfter(dataPagamento)){
+                            vendas = vendas.add(new BigDecimal(venda.getValor().replace(",", ".")));
+                        }
+                    }
+
+                    BigDecimal percentual = new BigDecimal(comissionado.getComissao().replace(",", "."));
+                    BigDecimal comissao = vendas.multiply(percentual).setScale(2, BigDecimal.ROUND_DOWN);
+                    BigDecimal bruto = fixo.add(comissao);
+                    BigDecimal descontos = calcularDescontos(empregado, dataPagamento);
+                    BigDecimal liquido = bruto.subtract(descontos);
+
+                    totalFixo = totalFixo.add(fixo);
+                    totalVendas = totalVendas.add(vendas);
+                    totalComissao = totalComissao.add(comissao);
+                    totalBrutoComissionados = totalBrutoComissionados.add(bruto);
+                    totalDescontosComissionados = totalDescontosComissionados.add(descontos);
+                    totalLiquidoComissionados = totalLiquidoComissionados.add(liquido);
+
+                    writer.write(String.format(Locale.US, "%-21s %8s %8s %8s %13s %9s %15s %-38s", empregado.getNome(), formatarDinheiro(fixo), formatarDinheiro(vendas), formatarDinheiro(comissao), formatarDinheiro(bruto), formatarDinheiro(descontos), formatarDinheiro(liquido), formatarMetodoPagamento(empregado)));
+
+                    writer.newLine();
+                }
+            }
+
+            writer.newLine();
+
+            writer.write(String.format(Locale.US, "TOTAL COMISSIONADOS %10s %8s %8s %13s %9s %15s", formatarDinheiro(totalFixo), formatarDinheiro(totalVendas), formatarDinheiro(totalComissao), formatarDinheiro(totalBrutoComissionados), formatarDinheiro(totalDescontosComissionados), formatarDinheiro(totalLiquidoComissionados)));
+
+            writer.newLine();
+            writer.newLine();
+
+            BigDecimal totalFolha = totalBrutoHoristas.add(totalBrutoAssalariados).add(totalBrutoComissionados);
+
+            writer.write("TOTAL FOLHA: " + formatarDinheiro(totalFolha));
+
+            writer.newLine();
+        }
     }
 }
