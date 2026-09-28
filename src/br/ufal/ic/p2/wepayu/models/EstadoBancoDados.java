@@ -6,11 +6,33 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Representa uma "fotografia" (snapshot) do estado do {@link BancoDados}
+ * em um dado momento — a lista de empregados (copiada em profundidade,
+ * com todos os seus cartões de ponto, vendas e taxas de serviço) e o
+ * contador usado para gerar novos identificadores.
+ *
+ * <p>É usada para implementar as operações de undo/redo: antes de cada
+ * comando que altera o estado do sistema, um {@code EstadoBancoDados} é
+ * empilhado, permitindo restaurar o sistema para esse ponto depois.</p>
+ */
 public class EstadoBancoDados {
 
+    /** Cópia independente da lista de empregados no momento do snapshot. */
     private List<Empregado> empregados;
+    /** Valor do contador de identificadores no momento do snapshot. */
     private int contador;
 
+    /**
+     * Cria um snapshot do estado atual, copiando profundamente cada
+     * empregado da lista informada (incluindo seus cartões de ponto,
+     * vendas e taxas de serviço), de forma que alterações futuras na
+     * lista original não afetem este snapshot.
+     *
+     * @param listaEmpregados lista de empregados a ser copiada
+     * @param contador valor atual do contador de identificadores
+     * @throws Exception se ocorrer erro ao recriar algum empregado
+     */
     public EstadoBancoDados(List<Empregado> listaEmpregados, int contador) throws Exception {
         this.empregados = new ArrayList<>();
         this.contador = contador;
@@ -68,10 +90,12 @@ public class EstadoBancoDados {
         }
     }
 
+    /** @return a lista de empregados armazenada neste snapshot */
     public List<Empregado> getEmpregados() {
         return empregados;
     }
 
+    /** @return o valor do contador de identificadores armazenado neste snapshot */
     public int getContador() {
         return contador;
     }
