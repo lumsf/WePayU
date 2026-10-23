@@ -1,10 +1,13 @@
 package br.ufal.ic.p2.wepayu.models;
 
+import java.io.Serializable;
+
 /**
  * Representa uma venda lançada para um empregado comissionado,
  * usada no cálculo da comissão paga sobre o valor vendido.
  */
-public class Venda {
+public class Venda implements Serializable {
+    private static final long serialVersionUID = 1L;
     /** Data em que a venda foi realizada, no formato "dd/mm/aaaa". */
     private String data;
     /** Valor da venda (aceita vírgula como separador decimal). */

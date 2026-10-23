@@ -8,6 +8,7 @@ import javax.swing.plaf.basic.BasicIconFactory;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.io.Serializable;
 
 /**
  * Classe base que representa um empregado do sistema WePayU, com os
@@ -21,7 +22,8 @@ import java.util.List;
  * calculado; esta classe concentra apenas os dados e as regras
  * comuns de cadastro.</p>
  */
-public class Empregado {
+public class Empregado implements Serializable {
+    private static final long serialVersionUID = 1L;
     /** Identificador único do empregado (ex.: "id1", "id2", ...). */
     private String id;
     /** Nome do empregado. */

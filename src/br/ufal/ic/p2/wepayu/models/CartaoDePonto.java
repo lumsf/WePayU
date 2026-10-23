@@ -1,10 +1,13 @@
 package br.ufal.ic.p2.wepayu.models;
 
+import java.io.Serializable;
+
 /**
  * Representa um cartão de ponto lançado para um empregado horista,
  * registrando a quantidade de horas trabalhadas em uma determinada data.
  */
-public class CartaoDePonto {
+public class CartaoDePonto implements Serializable {
+    private static final long serialVersionUID = 1L;
     /** Data do lançamento, no formato "dd/mm/aaaa". */
     private String data;
     /** Quantidade de horas trabalhadas nessa data (aceita vírgula como separador decimal). */

@@ -2,7 +2,7 @@ package br.ufal.ic.p2.wepayu.models;
 
 import br.ufal.ic.p2.wepayu.Exception.*;
 
-import java.io.BufferedWriter;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Locale;
@@ -159,13 +159,14 @@ public class BancoDados {
             e.setEndereco(valor);
         }
         else if(atributo.equals("salario")){
-            salvarEstado();
             e.setSalario(Validador.formatar(Validador.validarSalario(valor)));
+            salvarEstado();
+            ((Comissionado) e).setSalario(Validador.formatar(Validador.validarSalario(valor)));
         }
         else if(atributo.equals("comissao")){
             if(!e.getTipo().equals("comissionado")) throw new EmpregadoNaoComissionadoException();
-            salvarEstado();
             ((Comissionado) e).setComissao(Validador.formatar(Validador.validarComissao(valor)));
+            salvarEstado();
         }
         else if(atributo.equals("sindicalizado")){
             if (!valor.equals("true") && !valor.equals("false")) throw new ValorDeveSerTrueOuFalseException();
@@ -723,6 +724,31 @@ public class BancoDados {
         return formatarHoras(total);
     }
 
+    private BigDecimal horasNormaisNoPeriodo(Empregado empregado, LocalDate dataPagamento) {
+        BigDecimal total = BigDecimal.ZERO;
+        LocalDate inicio = dataPagamento.minusDays(6);
+        for (CartaoDePonto cartao : empregado.getListaCartoes()) {
+            LocalDate dataCartao = validarData(cartao.getData());
+            if (!dataCartao.isBefore(inicio) && !dataCartao.isAfter(dataPagamento)) {
+                BigDecimal horas = new BigDecimal(cartao.getHoras().replace(",", "."));
+                total = total.add(horas.min(new BigDecimal("8")));   // o que passa de 8h não é normal
+            }
+        }
+        return total;
+    }
+
+    private BigDecimal horasExtrasNoPeriodo(Empregado empregado, LocalDate dataPagamento) {
+        BigDecimal total = BigDecimal.ZERO;
+        LocalDate inicio = dataPagamento.minusDays(6);
+        for (CartaoDePonto cartao : empregado.getListaCartoes()) {
+            LocalDate dataCartao = validarData(cartao.getData());
+            if (!dataCartao.isBefore(inicio) && !dataCartao.isAfter(dataPagamento)) {
+                BigDecimal horas = new BigDecimal(cartao.getHoras().replace(",", "."));
+                total = total.add(horas.subtract(new BigDecimal("8")).max(BigDecimal.ZERO));            }
+        }
+        return total;
+    }
+
     /**
      * Soma as horas extras (acima de 8h por dia) trabalhadas por um
      * empregado horista dentro de um intervalo de datas (data final
@@ -927,34 +953,11 @@ public class BancoDados {
      */
     private BigDecimal calcularPagamentoHorista(Empregado empregado, LocalDate dataPagamento){
         BigDecimal salarioHora = new BigDecimal(empregado.getSalario().replace(",", "."));
-        BigDecimal horasNormais = BigDecimal.ZERO;
-        BigDecimal horasExtras = BigDecimal.ZERO;
+        BigDecimal normais = horasNormaisNoPeriodo(empregado, dataPagamento);
+        BigDecimal extras  = horasExtrasNoPeriodo(empregado, dataPagamento);
 
-        LocalDate inicio = dataPagamento.minusDays(6);
-
-        for(int j = 0; j < empregado.getListaCartoes().size(); j++){
-            CartaoDePonto cartao = empregado.getListaCartoes().get(j);
-            LocalDate dataCartao = validarData(cartao.getData());
-
-            if(!dataCartao.isBefore(inicio) && !dataCartao.isAfter(dataPagamento)){
-                BigDecimal horas = new BigDecimal(cartao.getHoras().replace(",", "."));
-                if(horas.compareTo(new BigDecimal("8")) <= 0){
-                    horasNormais = horasNormais.add(horas);
-                }
-                else{
-                    horasNormais = horasNormais.add(new BigDecimal("8"));
-
-                    BigDecimal extras = horas.subtract(new BigDecimal("8"));
-
-                    horasExtras = horasExtras.add(extras);
-                }
-            }
-        }
-
-        BigDecimal pagamentoNormal = horasNormais.multiply(salarioHora);
-        BigDecimal pagamentoExtra = horasExtras.multiply(salarioHora).multiply(new BigDecimal("1.5"));
-
-        return pagamentoNormal.add(pagamentoExtra);
+        return normais.multiply(salarioHora)
+                .add(extras.multiply(salarioHora).multiply(new BigDecimal("1.5")));
     }
 
     /**
@@ -1125,7 +1128,7 @@ public class BancoDados {
         }
 
         if(empregado.getMetodoPagamento().equals("banco")){
-            return "Banco do Brasil, Ag. " + empregado.getAgencia() + " CC " + empregado.getContaCorrente();
+            return empregado.getBanco() + ", Ag. " + empregado.getAgencia() + " CC " + empregado.getContaCorrente();
         }
 
         return "";
@@ -1170,8 +1173,8 @@ public class BancoDados {
             writer.write("==================================== ===== ===== ============= ========= =============== ======================================");
             writer.newLine();
 
-            int totalHorasNormais = 0;
-            int totalHorasExtras = 0;
+            BigDecimal totalHorasNormais = BigDecimal.ZERO;
+            BigDecimal totalHorasExtras = BigDecimal.ZERO;
             BigDecimal totalBrutoHoristas = BigDecimal.ZERO;
             BigDecimal totalDescontosHoristas = BigDecimal.ZERO;
             BigDecimal totalLiquidoHoristas = BigDecimal.ZERO;
@@ -1181,32 +1184,11 @@ public class BancoDados {
                     Empregado empregado = ordenados.get(j);
 
                     if (empregado instanceof Horista) {
-                        int horasNormais = 0;
-                        int horasExtras = 0;
-
                         LocalDate inicio = dataPagamento.minusDays(6);
-                        BigDecimal salarioHora = new BigDecimal(empregado.getSalario().replace(",", "."));
 
-                        for (int k = 0; k < empregado.getListaCartoes().size(); k++) {
-                            CartaoDePonto cartao = empregado.getListaCartoes().get(k);
-                            LocalDate dataCartao = validarData(cartao.getData());
-
-                            if (!dataCartao.isBefore(inicio) && !dataCartao.isAfter(dataPagamento)) {
-                                BigDecimal horas = new BigDecimal(cartao.getHoras().replace(",",
-                                        "."));
-                                if (horas.compareTo(new BigDecimal("8")) <= 0) {
-                                    horasNormais += horas.intValue();
-                                } else {
-                                    horasNormais += 8;
-                                    horasExtras += horas.subtract(new BigDecimal("8")).intValue();
-                                }
-                            }
-                        }
-
-                        BigDecimal pagamentoNormal = salarioHora.multiply(BigDecimal.valueOf(horasNormais));
-                        BigDecimal pagamentoExtra = salarioHora.multiply(BigDecimal.valueOf(horasExtras))
-                                .multiply(new BigDecimal("1.5"));
-                        BigDecimal bruto = pagamentoNormal.add(pagamentoExtra);
+                        BigDecimal horasNormais = horasNormaisNoPeriodo(empregado, dataPagamento);
+                        BigDecimal horasExtras  = horasExtrasNoPeriodo(empregado, dataPagamento);
+                        BigDecimal bruto = calcularPagamentoHorista(empregado, dataPagamento);
 
                         BigDecimal taxasServicoPeriodo = BigDecimal.ZERO;
                         for (int k = 0; k < empregado.getListaTaxaServico().size(); k++) {
@@ -1242,16 +1224,17 @@ public class BancoDados {
                             empregado.setDescontosPendentes(totalDevido.subtract(bruto));
                         }
 
-                        totalHorasNormais += horasNormais;
-                        totalHorasExtras += horasExtras;
+                        totalHorasNormais = totalHorasNormais.add(horasNormais);
+                        totalHorasExtras = totalHorasExtras.add(horasExtras);
                         totalBrutoHoristas = totalBrutoHoristas.add(bruto);
                         totalDescontosHoristas = totalDescontosHoristas.add(descontos);
                         totalLiquidoHoristas = totalLiquidoHoristas.add(liquido);
 
                         String metodo = formatarMetodoPagamento(empregado);
 
-                        writer.write(String.format(Locale.US, "%-36s %5d %5d %13s %9s %15s %-38s",
-                                empregado.getNome(), horasNormais, horasExtras,
+                        writer.write(String.format(Locale.US, "%-36s %5s %5s %13s %9s %15s %-38s",
+                                empregado.getNome(), formatarHoras(horasNormais)
+                                , formatarHoras(horasExtras),
                                 formatarDinheiro(bruto), formatarDinheiro(descontos), formatarDinheiro(liquido),
                                 metodo));
                         writer.newLine();
@@ -1261,8 +1244,8 @@ public class BancoDados {
 
             writer.newLine();
 
-            writer.write(String.format(Locale.US, "TOTAL HORISTAS %27d %5d %13s %9s %15s", totalHorasNormais
-                    , totalHorasExtras, formatarDinheiro(totalBrutoHoristas), formatarDinheiro(totalDescontosHoristas), formatarDinheiro(totalLiquidoHoristas)));
+            writer.write(String.format(Locale.US, "TOTAL HORISTAS %27s %5s %13s %9s %15s", formatarHoras(totalHorasNormais)
+                    , formatarHoras(totalHorasExtras), formatarDinheiro(totalBrutoHoristas), formatarDinheiro(totalDescontosHoristas), formatarDinheiro(totalLiquidoHoristas)));
             writer.newLine();
             writer.newLine();
 
@@ -1443,5 +1426,20 @@ public class BancoDados {
     /** @return o número de empregados atualmente cadastrados no sistema */
     public int getNumeroDeEmpregados(){
         return listaEmpregados.size();
+    }
+
+    public void gravar(String arquivo) throws IOException {
+        try (ObjectOutputStream saida = new ObjectOutputStream(new FileOutputStream(arquivo))) {
+            saida.writeInt(contador);
+            saida.writeObject(new ArrayList<>(listaEmpregados));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public void carregar(String arquivo) throws IOException, ClassNotFoundException {
+        try (ObjectInputStream entrada = new ObjectInputStream(new FileInputStream(arquivo))) {
+            contador = entrada.readInt();
+            listaEmpregados.addAll((List<Empregado>) entrada.readObject());
+        }
     }
 }
