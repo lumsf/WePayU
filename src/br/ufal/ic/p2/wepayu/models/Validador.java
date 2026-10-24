@@ -14,11 +14,8 @@ public class Validador {
      *
      * @param valor texto do salário (aceita vírgula ou ponto decimal)
      * @return o valor numérico do salário
-     * @throws SalarioNuloException se o valor for nulo ou vazio
-     * @throws SalarioNaoNumericoException se o valor não for numérico
-     * @throws SalarioNegativoException se o valor for negativo
      */
-    public static double validarSalario(String valor) throws EmpregadoNaoExisteException {
+    public static double validarSalario(String valor) {
         if(valor == null || valor.isEmpty()) throw new SalarioNuloException();
         double d;
 
@@ -37,11 +34,8 @@ public class Validador {
      *
      * @param valor texto da comissão (aceita vírgula ou ponto decimal)
      * @return o valor numérico da comissão
-     * @throws ComissaoNulaException se o valor for nulo ou vazio
-     * @throws ComissaoNaoNumericaException se o valor não for numérico
-     * @throws ComissaoNegativaException se o valor for negativo
      */
-    public static double validarComissao(String valor) throws EmpregadoNaoExisteException{
+    public static double validarComissao(String valor) {
         if(valor == null || valor.isEmpty()) throw new ComissaoNulaException();
         double d;
 
@@ -60,11 +54,8 @@ public class Validador {
      *
      * @param valor texto da taxa sindical (aceita vírgula ou ponto decimal)
      * @return o valor numérico da taxa sindical
-     * @throws TaxaSindicalNulaException se o valor for nulo ou vazio
-     * @throws TaxaSindicalNaoNumericaException se o valor não for numérico
-     * @throws TaxaSindicalNegativaException se o valor for negativo
      */
-    public static double validarTaxaSindical(String valor) throws EmpregadoNaoExisteException{
+    public static double validarTaxaSindical(String valor) {
         if(valor == null || valor.isEmpty()) throw new TaxaSindicalNulaException();
         double d;
 

@@ -3,6 +3,10 @@ package br.ufal.ic.p2.wepayu;
 import br.ufal.ic.p2.wepayu.Exception.*;
 import br.ufal.ic.p2.wepayu.models.*;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 /**
  * Fachada (Facade) do sistema WePayU: ponto único de entrada para
  * todas as operações do sistema de folha de pagamento (cadastro e
@@ -16,10 +20,11 @@ import br.ufal.ic.p2.wepayu.models.*;
  * (EasyAccept).</p>
  */
 public class Facade {
+    private static final String ARQUIVO = "wepayu-dados.ser";
+    /** Indica se {@link #encerrarSistema()} já foi chamado, bloqueando novos comandos. */
+    private boolean encerrado = false;
     /** Base de dados em memória com os empregados e o histórico de undo/redo. */
     BancoDados novoBancoDados = new BancoDados();
-    /** Contador de quantas vezes {@link #zerarSistema()} foi chamado, usado para recriar o banco de dados periodicamente. */
-    private int quantidadeZerars = 0;
 
     /**
      * Cria um novo empregado horista ou assalariado.
@@ -345,7 +350,7 @@ public class Facade {
      * @throws IdentificacaoDoEmpregadoNaoPodeSerNulaException se o id for nulo/vazio
      * @throws EmpregadoNaoEhSindicalizadoException se consultar dado de sindicato de não sindicalizado
      * @throws EmpregadoNaoRecebeEmBancoException se consultar dado bancário de quem não recebe em banco
-     * @throws EmpregadoNaoComissionadoException se consultar comissão de quem não é comissionado
+     * @throws EmpregadoNaoEhComissionadoException se consultar comissão de quem não é comissionado
      * @throws AtributoNaoExisteException se o atributo não for reconhecido
      * @throws Exception se o empregado não existir
      */
@@ -393,7 +398,7 @@ public class Facade {
             return empregado.getContaCorrente();
         }
         else if(atributo.equals("comissao")){
-            if(!(empregado instanceof Comissionado)) throw new EmpregadoNaoComissionadoException();
+            if(!(empregado instanceof Comissionado)) throw new EmpregadoNaoEhComissionadoException();
             return ((Comissionado) empregado).getComissao();
         }
         throw new AtributoNaoExisteException();
@@ -430,45 +435,40 @@ public class Facade {
         return String.valueOf(novoBancoDados.getNumeroDeEmpregados());
     }
 
-    /** Indica se {@link #encerrarSistema()} já foi chamado, bloqueando novos comandos. */
-    private boolean encerrado = false;
-
     /**
      * Verifica se o sistema já foi encerrado, lançando exceção caso
      * positivo. Usado antes de comandos que não fazem sentido após o
      * encerramento (undo, redo e consulta de número de empregados).
      *
-     * @throws Exception se o sistema já tiver sido encerrado
      */
-    private void verificarEncerrado() throws Exception {
-        if (encerrado) throw new Exception("Nao pode dar comandos depois de encerrarSistema.");
+    private void verificarEncerrado() {
+        if (encerrado) throw new SistemaEncerradoException();
     }
 
-    /**
-     * Marca o sistema como encerrado, impedindo a execução de novos
-     * comandos de undo, redo ou consulta de número de empregados
-     * (usado ao final da execução dos testes de aceitação).
-     */
-    public void encerrarSistema(){
+    /** Lê os dados gravados por encerrarSistema, se o arquivo existir. */
+    public Facade() {
+        try {
+            if (new File(ARQUIVO).exists()) {
+                novoBancoDados.carregar(ARQUIVO);
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("Nao foi possivel ler os dados", e);
+        }
+    }
+    /** Grava os dados em arquivo e bloqueia novos comandos.*/
+    public void encerrarSistema() throws Exception {
+        novoBancoDados.gravar(ARQUIVO);
         encerrado = true;
     }
 
-    /**
-     * Reinicia o sistema, removendo todos os empregados cadastrados e
-     * o histórico de undo/redo, e desmarcando o encerramento. A cada
-     * 8ª chamada, recria o {@link BancoDados} do zero (limpando também
-     * o contador de identificadores).
-     *
-     * @throws Exception se ocorrer erro ao salvar o estado anterior
-     */
+    /** Apaga todos os empregados e o arquivo de dados, e reabre o sistema. */
     public void zerarSistema() throws Exception {
         encerrado = false;
-        if (quantidadeZerars == 7) {
-            novoBancoDados = new BancoDados();
-        }
 
         novoBancoDados.zerar();
 
-        quantidadeZerars++;
+        Files.deleteIfExists(Paths.get(ARQUIVO));
     }
+
+
 }

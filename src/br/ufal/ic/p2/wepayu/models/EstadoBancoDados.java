@@ -33,7 +33,7 @@ public class EstadoBancoDados {
      * @param contador valor atual do contador de identificadores
      * @throws Exception se ocorrer erro ao recriar algum empregado
      */
-    public EstadoBancoDados(List<Empregado> listaEmpregados, int contador) throws Exception {
+    public EstadoBancoDados(List<Empregado> listaEmpregados, int contador) {
         this.empregados = new ArrayList<>();
         this.contador = contador;
 

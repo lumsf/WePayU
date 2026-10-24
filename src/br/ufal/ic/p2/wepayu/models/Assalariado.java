@@ -1,7 +1,5 @@
 package br.ufal.ic.p2.wepayu.models;
 
-import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoExisteException;
-
 /**
  * Empregado do tipo assalariado, que recebe um salário mensal fixo,
  * pago sempre no último dia útil do mês.
@@ -21,7 +19,7 @@ public class Assalariado extends Empregado{
      * @param salario valor do salário mensal fixo
      * @throws EmpregadoNaoExisteException se nome ou endereço forem inválidos
      */
-    public Assalariado(String nome, String endereco, String tipo, String salario) throws EmpregadoNaoExisteException {
+    public Assalariado(String nome, String endereco, String tipo, String salario) {
         super(nome, endereco, tipo, salario);
     }
 }

@@ -1,7 +1,5 @@
 package br.ufal.ic.p2.wepayu.models;
 
-import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoExisteException;
-
 /**
  * Empregado do tipo horista, remunerado de acordo com as horas
  * registradas em seus cartões de ponto, com pagamento de horas
@@ -20,9 +18,8 @@ public class Horista extends Empregado{
      * @param endereco endereço do empregado
      * @param tipo tipo do empregado ("horista")
      * @param salario valor do salário por hora
-     * @throws EmpregadoNaoExisteException se nome ou endereço forem inválidos
      */
-    public Horista(String nome, String endereco, String tipo, String salario) throws EmpregadoNaoExisteException {
+    public Horista(String nome, String endereco, String tipo, String salario) {
         super(nome, endereco, tipo, salario);
 
     }

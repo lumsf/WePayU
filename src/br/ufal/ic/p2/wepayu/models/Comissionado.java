@@ -1,7 +1,5 @@
 package br.ufal.ic.p2.wepayu.models;
 
-import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoExisteException;
-
 /**
  * Empregado do tipo comissionado, que recebe um salário fixo quinzenal
  * somado a uma comissão sobre o total de vendas realizadas no período,
@@ -26,7 +24,7 @@ public class Comissionado extends Empregado{
      * @param comissao taxa de comissão sobre as vendas
      * @throws EmpregadoNaoExisteException se nome ou endereço forem inválidos
      */
-    public Comissionado(String nome, String endereco, String tipo, String salario, String comissao) throws EmpregadoNaoExisteException {
+    public Comissionado(String nome, String endereco, String tipo, String salario, String comissao) {
         super(nome, endereco, tipo, salario);
         this.comissao = comissao;
     }

@@ -44,7 +44,7 @@ public class BancoDados {
      *
      * @throws Exception se ocorrer erro ao criar o snapshot
      */
-    private void salvarEstado() throws Exception {
+    private void salvarEstado() {
 
         EstadoBancoDados estado =
                 new EstadoBancoDados(listaEmpregados, contador);
@@ -60,7 +60,7 @@ public class BancoDados {
      * @param novoEmpregado empregado já validado, a ser cadastrado
      * @throws Exception se ocorrer erro ao salvar o estado anterior
      */
-    public void adicionarEmpregado(Empregado novoEmpregado) throws Exception {
+    public void adicionarEmpregado(Empregado novoEmpregado) {
         salvarEstado();
 
         contador++;
@@ -79,7 +79,7 @@ public class BancoDados {
      * @throws EmpregadoNaoExisteException se não existir empregado com esse id
      * @throws Exception se ocorrer erro ao salvar o estado anterior
      */
-    public void remover(String id) throws Exception{
+    public void remover(String id){
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
         for (int j = 0; j < listaEmpregados.size(); j++) {
             if (listaEmpregados.get(j).getId().equals(id)) {
@@ -88,8 +88,6 @@ public class BancoDados {
                 return;
             }
         }
-
-        throw new EmpregadoNaoExisteException();
     }
 
     /**
@@ -99,9 +97,9 @@ public class BancoDados {
      * @return o empregado encontrado
      * @throws EmpregadoNaoExisteException se não existir empregado com esse id
      */
-    public Empregado buscar(String id) throws Exception{
-        for(Empregado empregado : listaEmpregados){
-            if(empregado.getId().equals(id)){
+    public Empregado buscar(String id) {
+        for (Empregado empregado : listaEmpregados) {
+            if (empregado.getId().equals(id)) {
                 return empregado;
             }
         }
@@ -143,7 +141,7 @@ public class BancoDados {
      * @param valor novo valor do atributo
      * @throws Exception se o id/atributo/valor forem inválidos para o caso
      */
-    public void alteraEmpregado(String id, String atributo, String valor) throws Exception {
+    public void alteraEmpregado(String id, String atributo, String valor) {
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
 
         Empregado e = buscar(id);
@@ -159,14 +157,15 @@ public class BancoDados {
             e.setEndereco(valor);
         }
         else if(atributo.equals("salario")){
-            e.setSalario(Validador.formatar(Validador.validarSalario(valor)));
+            String salarioFormatado = Validador.formatar(Validador.validarSalario(valor));
             salvarEstado();
-            ((Comissionado) e).setSalario(Validador.formatar(Validador.validarSalario(valor)));
+            e.setSalario(salarioFormatado);
         }
         else if(atributo.equals("comissao")){
-            if(!e.getTipo().equals("comissionado")) throw new EmpregadoNaoComissionadoException();
-            ((Comissionado) e).setComissao(Validador.formatar(Validador.validarComissao(valor)));
+            if(!e.getTipo().equals("comissionado")) throw new EmpregadoNaoEhComissionadoException();
+            String comissaoFormatada = Validador.formatar(Validador.validarComissao(valor));
             salvarEstado();
+            ((Comissionado) e).setComissao(comissaoFormatada);
         }
         else if(atributo.equals("sindicalizado")){
             if (!valor.equals("true") && !valor.equals("false")) throw new ValorDeveSerTrueOuFalseException();
@@ -213,7 +212,7 @@ public class BancoDados {
      *         estiver em uso por outro empregado
      */
     public void alteraEmpregado(String id, String atributo, String valor, String idSindicato,
-                                String taxaSindical) throws Exception {
+                                String taxaSindical){
         Empregado empregado = buscar(id);
 
         if (!atributo.equals("sindicalizado")) throw new AtributoNaoExisteException();
@@ -263,7 +262,7 @@ public class BancoDados {
      * @throws Exception se os dados forem inválidos
      */
     public void alteraEmpregado(String id, String atributo, String valor, String banco, String agencia,
-                                String contaCorrente) throws Exception{
+                                String contaCorrente){
         Empregado empregado = buscar(id);
 
         if(!atributo.equals("metodoPagamento")) throw new AtributoNaoExisteException();
@@ -299,7 +298,7 @@ public class BancoDados {
      * @param salario novo salário (se nulo, reaproveita o salário atual)
      * @throws Exception se o tipo for inválido ou o empregado não existir
      */
-    public void mudaTipoEmpregado(String id, String novoTipo, String salario) throws Exception{
+    public void mudaTipoEmpregado(String id, String novoTipo, String salario){
         Empregado antigo = buscar(id);
 
         if(!novoTipo.equals("horista") && !novoTipo.equals("assalariado")) throw new TipoInvalidoException();
@@ -344,7 +343,7 @@ public class BancoDados {
      * @param comissao taxa de comissão do novo empregado comissionado
      * @throws Exception se o tipo for inválido ou o empregado não existir
      */
-    public void mudaTipoEmpregado(String id, String novoTipo, String salario, String comissao) throws Exception{
+    public void mudaTipoEmpregado(String id, String novoTipo, String salario, String comissao){
         Empregado antigo = buscar(id);
 
         if(!novoTipo.equals("comissionado")) throw new TipoInvalidoException();
@@ -382,6 +381,10 @@ public class BancoDados {
         novo.setIdSindicato(antigo.getIdSindicato());
         novo.setTaxaSindical(antigo.getTaxaSindical());
         novo.setDataUltimoPagamento(antigo.getDataUltimoPagamento());
+        novo.setListaCartoes(new ArrayList<>(antigo.getListaCartoes()));
+        novo.setListaVendas(new ArrayList<>(antigo.getListaVendas()));
+        novo.setListaTaxaServico(new ArrayList<>(antigo.getListaTaxaServico()));
+        novo.setDescontosPendentes(antigo.getDescontosPendentes());
     }
 
     /**
@@ -391,7 +394,7 @@ public class BancoDados {
      *
      * @throws Exception se ocorrer erro ao salvar o estado anterior
      */
-    public void zerar() throws Exception {
+    public void zerar() {
         salvarEstado();
         listaEmpregados.clear();
         contador = 0;
@@ -407,7 +410,7 @@ public class BancoDados {
      * @throws DataInvalidaException se a data for inválida
      * @throws HorasDevemSerPositivasException se as horas não forem positivas
      */
-    public void lancaCartao(String id, String data, String horas) throws Exception{
+    public void lancaCartao(String id, String data, String horas){
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
 
         Empregado empregado = buscar(id);
@@ -464,16 +467,16 @@ public class BancoDados {
      * @param id identificador do empregado
      * @param data data da venda, no formato "dd/mm/aaaa"
      * @param valor valor da venda (deve ser positivo)
-     * @throws EmpregadoNaoComissionadoException se o empregado não for comissionado
+     * @throws EmpregadoNaoEhComissionadoException se o empregado não for comissionado
      * @throws DataInvalidaException se a data for inválida
      * @throws ValorDeveSerPositivoException se o valor não for positivo
      */
-    public void lancaVenda(String id, String data, String valor) throws Exception{
+    public void lancaVenda(String id, String data, String valor){
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
 
         Empregado empregado = buscar(id);
 
-        if(!(empregado instanceof Comissionado)) throw new EmpregadoNaoComissionadoException();
+        if(!(empregado instanceof Comissionado)) throw new EmpregadoNaoEhComissionadoException();
 
         validarData(data);
 
@@ -507,7 +510,7 @@ public class BancoDados {
      * @throws DataFinalInvalidaException se a data final for inválida
      * @throws DataInicialNaoPodeSerPosteriorAaDataFinalException se início &gt; fim
      */
-    public String getVendasRealizadas(String id, String dataInicial, String dataFinal) throws Exception{
+    public String getVendasRealizadas(String id, String dataInicial, String dataFinal){
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
 
         Empregado empregado = buscar(id);
@@ -576,7 +579,7 @@ public class BancoDados {
      * @throws DataInvalidaException se a data for inválida
      * @throws ValorDeveSerPositivoException se o valor não for positivo
      */
-    public void lancaTaxaServico(String membro, String data, String valor) throws Exception {
+    public void lancaTaxaServico(String membro, String data, String valor) {
         if(membro == null || membro.isEmpty()) throw new IdentificacaoDoMembroNaoPodeSerNulaException();
 
         Empregado empregado = null;
@@ -625,7 +628,7 @@ public class BancoDados {
      * @throws DataFinalInvalidaException se a data final for inválida
      * @throws DataInicialNaoPodeSerPosteriorAaDataFinalException se início &gt; fim
      */
-    public String getTaxasServico(String id, String dataInicial, String dataFinal) throws Exception{
+    public String getTaxasServico(String id, String dataInicial, String dataFinal){
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
 
         Empregado empregado = buscar(id);
@@ -680,7 +683,7 @@ public class BancoDados {
      * @throws DataFinalInvalidaException se a data final for inválida
      * @throws DataInicialNaoPodeSerPosteriorAaDataFinalException se início &gt; fim
      */
-    public String getHorasNormaisTrabalhadas(String id, String dataInicial, String dataFinal) throws Exception{
+    public String getHorasNormaisTrabalhadas(String id, String dataInicial, String dataFinal){
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
 
         Empregado empregado = buscar(id);
@@ -763,7 +766,7 @@ public class BancoDados {
      * @throws DataFinalInvalidaException se a data final for inválida
      * @throws DataInicialNaoPodeSerPosteriorAaDataFinalException se início &gt; fim
      */
-    public String getHorasExtrasTrabalhadas(String id, String dataInicial, String dataFinal) throws Exception{
+    public String getHorasExtrasTrabalhadas(String id, String dataInicial, String dataFinal){
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
 
         Empregado empregado = buscar(id);
@@ -912,9 +915,8 @@ public class BancoDados {
      *
      * @param data data de referência da folha, "dd/mm/aaaa"
      * @return o total da folha, formatado com vírgula
-     * @throws Exception se a data for inválida
      */
-    public String totalFolha(String data) throws Exception{
+    public String totalFolha(String data) {
         LocalDate dataPagamento = validarData(data);
 
         BigDecimal totalFolha = BigDecimal.ZERO;
@@ -1144,7 +1146,7 @@ public class BancoDados {
      * @param saida caminho do arquivo de saída a ser gerado
      * @throws Exception se a data for inválida ou ocorrer erro de escrita
      */
-    public void rodaFolha(String data, String saida) throws Exception  {
+    public void rodaFolha(String data, String saida) throws IOException  {
         LocalDate dataPagamento = validarData(data);
 
         salvarEstado();
@@ -1386,7 +1388,7 @@ public class BancoDados {
      * @throws NaoHaComandoADesfazerException se não houver comando a desfazer
      * @throws Exception se ocorrer erro ao restaurar o estado
      */
-    public void undo() throws Exception {
+    public void undo() {
         if (pilhaUndo.empty()) throw new NaoHaComandoADesfazerException();
 
         EstadoBancoDados estadoAtual = new EstadoBancoDados(listaEmpregados, contador);
@@ -1408,7 +1410,7 @@ public class BancoDados {
      * @throws NaoHaComandoARefazerException se não houver comando a refazer
      * @throws Exception se ocorrer erro ao restaurar o estado
      */
-    public void redo() throws Exception {
+    public void redo() {
         if (pilhaRedo.empty()) throw new NaoHaComandoARefazerException();
 
         EstadoBancoDados estadoAtual = new EstadoBancoDados(listaEmpregados, contador);

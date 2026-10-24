@@ -72,9 +72,8 @@ public class Empregado implements Serializable {
      * @param endereco endereço do empregado (não pode ser nulo/vazio)
      * @param tipo tipo do empregado ("horista", "assalariado" ou "comissionado")
      * @param salario salário do empregado, já validado e formatado
-     * @throws EmpregadoNaoExisteException se nome ou endereço forem nulos/vazios
      */
-    public Empregado(String nome, String endereco, String tipo, String salario) throws EmpregadoNaoExisteException {
+    public Empregado(String nome, String endereco, String tipo, String salario) {
         if(nome == null || nome.isEmpty()) throw new NomeNaoPodeSerNuloException();
         if(endereco == null || endereco.isEmpty()) throw new EnderecoNaoPodeSerNuloException();
 
