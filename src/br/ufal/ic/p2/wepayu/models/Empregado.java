@@ -7,6 +7,7 @@ import br.ufal.ic.p2.wepayu.Exception.NomeNaoPodeSerNuloException;
 import javax.swing.plaf.basic.BasicIconFactory;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.io.Serializable;
 
@@ -146,10 +147,8 @@ public class Empregado implements Serializable {
     // ---- Cartões de ponto (horistas) ----
 
     /** @return a lista de cartões de ponto lançados para este empregado */
-    public List<CartaoDePonto> getListaCartoes(){return listaCartoes;}
-    /** @param listaCartoes nova lista de cartões de ponto do empregado */
-    public void setListaCartoes(List<CartaoDePonto> listaCartoes){
-        this.listaCartoes = listaCartoes;
+    public List<CartaoDePonto> getListaCartoes() {
+        return Collections.unmodifiableList(listaCartoes);
     }
 
     /** Adiciona um novo cartão de ponto à lista deste empregado.
@@ -161,10 +160,8 @@ public class Empregado implements Serializable {
     // ---- Vendas (comissionados) ----
 
     /** @return a lista de vendas lançadas para este empregado */
-    public List<Venda> getListaVendas(){return listaVendas;}
-    /** @param listaVendas nova lista de vendas do empregado */
-    public void setListaVendas(List<Venda> listaVendas){
-        this.listaVendas = listaVendas;
+    public List<Venda> getListaVendas() {
+        return Collections.unmodifiableList(listaVendas);
     }
 
     /** Adiciona uma nova venda à lista deste empregado.
@@ -176,16 +173,18 @@ public class Empregado implements Serializable {
     // ---- Taxas de serviço (sindicalizados) ----
 
     /** @return a lista de taxas de serviço lançadas para este empregado */
-    public List<TaxaServico> getListaTaxaServico(){return listaTaxaServico;}
-    /** @param listaTaxaServico nova lista de taxas de serviço do empregado */
-    public void setListaTaxaServico(List<TaxaServico> listaTaxaServico){
-        this.listaTaxaServico = listaTaxaServico;
+    public List<TaxaServico> getListaTaxaServico() {
+        return Collections.unmodifiableList(listaTaxaServico);
     }
-
     /** Adiciona uma nova taxa de serviço à lista deste empregado.
      * @param novaTaxaServico taxa de serviço a ser lançada */
     public void adicionarTaxaServico(TaxaServico novaTaxaServico){
         listaTaxaServico.add(novaTaxaServico);
     }
 
+    public void copiarLancamentosDe(Empregado outro) {
+        this.listaCartoes = new ArrayList<>(outro.listaCartoes);
+        this.listaVendas = new ArrayList<>(outro.listaVendas);
+        this.listaTaxaServico = new ArrayList<>(outro.listaTaxaServico);
+    }
 }

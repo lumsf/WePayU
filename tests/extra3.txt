@@ -1,0 +1,8 @@
+zerarSistema
+id1=criarEmpregado nome="Ana" endereco="Rua A" tipo=horista salario=10
+lancaCartao emp=${id1} data=3/1/2005 horas=8
+alteraEmpregado emp=${id1} atributo=tipo valor=assalariado salario=1000
+alteraEmpregado emp=${id1} atributo=tipo valor=horista salario=10
+expect 8 getHorasNormaisTrabalhadas emp=${id1} dataInicial=1/1/2005 dataFinal=10/1/2005
+encerrarSistema
+quit

@@ -5,11 +5,8 @@ import br.ufal.ic.p2.wepayu.Exception.*;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Locale;
+import java.util.*;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Stack;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
@@ -25,7 +22,7 @@ import java.time.LocalDate;
  */
 public class BancoDados {
     /** Lista de todos os empregados cadastrados no sistema. */
-    public List<Empregado> listaEmpregados = new ArrayList<>();
+    private List<Empregado> listaEmpregados = new ArrayList<>();
     /** Contador usado para gerar o próximo identificador de empregado ("id1", "id2", ...). */
     private int contador = 0;
 
@@ -33,9 +30,6 @@ public class BancoDados {
     private Stack<EstadoBancoDados> pilhaUndo = new Stack<>();
     /** Pilha de estados desfeitos, usada pelo comando {@link #redo()}. */
     private Stack<EstadoBancoDados> pilhaRedo = new Stack<>();
-
-    /** @return a lista de empregados cadastrados no sistema */
-    public List<Empregado> getListaEmpregados(){ return listaEmpregados;}
 
     /**
      * Empilha uma cópia (snapshot) do estado atual na pilha de undo e
@@ -88,6 +82,7 @@ public class BancoDados {
                 return;
             }
         }
+        throw new EmpregadoNaoExisteException();
     }
 
     /**
@@ -381,9 +376,7 @@ public class BancoDados {
         novo.setIdSindicato(antigo.getIdSindicato());
         novo.setTaxaSindical(antigo.getTaxaSindical());
         novo.setDataUltimoPagamento(antigo.getDataUltimoPagamento());
-        novo.setListaCartoes(new ArrayList<>(antigo.getListaCartoes()));
-        novo.setListaVendas(new ArrayList<>(antigo.getListaVendas()));
-        novo.setListaTaxaServico(new ArrayList<>(antigo.getListaTaxaServico()));
+        novo.copiarLancamentosDe(antigo);
         novo.setDescontosPendentes(antigo.getDescontosPendentes());
     }
 

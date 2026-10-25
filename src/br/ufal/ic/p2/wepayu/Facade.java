@@ -4,6 +4,7 @@ import br.ufal.ic.p2.wepayu.Exception.*;
 import br.ufal.ic.p2.wepayu.models.*;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -38,9 +39,8 @@ public class Facade {
      * @throws EnderecoNaoPodeSerNuloException se o endereço for nulo/vazio
      * @throws TipoInvalidoException se o tipo não for um tipo reconhecido
      * @throws TipoNaoAplicavelException se o tipo for "comissionado" (deve usar a sobrecarga com comissão)
-     * @throws Exception se o salário for inválido
      */
-    public String criarEmpregado(String nome, String endereco, String tipo, String salario) throws Exception {
+    public String criarEmpregado(String nome, String endereco, String tipo, String salario) {
         if(nome == null || nome.isEmpty()) throw new NomeNaoPodeSerNuloException();
         if(endereco == null || endereco.isEmpty()) throw new EnderecoNaoPodeSerNuloException();
         if(!tipo.equals("horista") && !tipo.equals("assalariado") && !tipo.equals("comissionado")) {
@@ -78,10 +78,8 @@ public class Facade {
      * @throws EnderecoNaoPodeSerNuloException se o endereço for nulo/vazio
      * @throws TipoInvalidoException se o tipo não for um tipo reconhecido
      * @throws TipoNaoAplicavelException se o tipo não for "comissionado"
-     * @throws Exception se salário ou comissão forem inválidos
      */
-    public String criarEmpregado(String nome, String endereco, String tipo, String salario, String comissao)
-            throws Exception {
+    public String criarEmpregado(String nome, String endereco, String tipo, String salario, String comissao) {
         if(nome == null || nome.isEmpty()) throw new NomeNaoPodeSerNuloException();
         if(endereco == null || endereco.isEmpty()) throw new EnderecoNaoPodeSerNuloException();
         if(!tipo.equals("horista") && !tipo.equals("assalariado") && !tipo.equals("comissionado")) {
@@ -103,9 +101,8 @@ public class Facade {
      *
      * @param id identificador do empregado a remover
      * @throws EmpregadoNaoExisteException se não existir empregado com esse id
-     * @throws Exception se ocorrer outro erro ao remover
      */
-    public void removerEmpregado (String id) throws Exception {
+    public void removerEmpregado (String id) {
         novoBancoDados.remover(id);
     }
 
@@ -116,9 +113,8 @@ public class Facade {
      * @param data data do lançamento, "dd/mm/aaaa"
      * @param horas quantidade de horas trabalhadas
      * @throws IdentificacaoDoEmpregadoNaoPodeSerNulaException se o id for nulo/vazio
-     * @throws Exception se o empregado não existir, não for horista, ou os dados forem inválidos
      */
-    public void lancaCartao(String id, String data, String horas) throws Exception{
+    public void lancaCartao(String id, String data, String horas){
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
         novoBancoDados.lancaCartao(id, data, horas);
     }
@@ -129,9 +125,8 @@ public class Facade {
      * @param id identificador do empregado
      * @param data data da venda, "dd/mm/aaaa"
      * @param valor valor da venda
-     * @throws Exception se o empregado não existir, não for comissionado, ou os dados forem inválidos
      */
-    public void lancaVenda(String id, String data, String valor) throws Exception{
+    public void lancaVenda(String id, String data, String valor){
         novoBancoDados.lancaVenda(id, data, valor);
     }
 
@@ -142,9 +137,8 @@ public class Facade {
      * @param id identificação do sindicato do empregado alvo
      * @param data data do lançamento, "dd/mm/aaaa"
      * @param valor valor da taxa
-     * @throws Exception se nenhum empregado tiver essa identificação de sindicato, ou os dados forem inválidos
      */
-    public void lancaTaxaServico(String id, String data, String valor) throws Exception{
+    public void lancaTaxaServico(String id, String data, String valor){
         novoBancoDados.lancaTaxaServico(id, data, valor);
     }
 
@@ -156,9 +150,8 @@ public class Facade {
      * @param id identificador do empregado
      * @param atributo nome do atributo a alterar
      * @param valor novo valor do atributo
-     * @throws Exception se o empregado não existir ou o valor for inválido para o atributo
      */
-    public void alteraEmpregado(String id, String atributo, String valor) throws Exception {
+    public void alteraEmpregado(String id, String atributo, String valor) {
         if(atributo.equals("tipo")){
             novoBancoDados.mudaTipoEmpregado(id, valor, null);
         }
@@ -181,9 +174,8 @@ public class Facade {
      * @param valor novo valor do atributo
      * @param extra dado adicional (salário, comissão ou banco, conforme o caso)
      * @throws AtributoNaoExisteException se o atributo não for reconhecido
-     * @throws Exception se o empregado não existir ou os dados forem inválidos
      */
-    public void alteraEmpregado(String id, String atributo, String valor, String extra) throws Exception {
+    public void alteraEmpregado(String id, String atributo, String valor, String extra) {
         if(atributo.equals("tipo")){
             if(valor.equals("comissionado")){
                 novoBancoDados.mudaTipoEmpregado(id, valor, null, extra);
@@ -215,10 +207,8 @@ public class Facade {
      * @param extra1 primeiro dado adicional (salário ou id de sindicato)
      * @param extra2 segundo dado adicional (comissão ou taxa sindical)
      * @throws AtributoNaoExisteException se a combinação de atributo/valor não for reconhecida
-     * @throws Exception se o empregado não existir ou os dados forem inválidos
      */
-    public void alteraEmpregado(String id, String atributo, String valor, String extra1, String extra2)
-            throws Exception {
+    public void alteraEmpregado(String id, String atributo, String valor, String extra1, String extra2) {
         if(atributo.equals("tipo") && valor.equals("comissionado")){
             novoBancoDados.mudaTipoEmpregado(id, valor, extra1, extra2);
         }
@@ -240,10 +230,9 @@ public class Facade {
      * @param banco nome do banco
      * @param agencia agência bancária
      * @param contaCorrente número da conta corrente
-     * @throws Exception se o empregado não existir ou os dados forem inválidos
      */
     public void alteraEmpregado(String id, String atributo, String valor, String banco, String agencia,
-                                String contaCorrente) throws Exception{
+                                String contaCorrente){
         novoBancoDados.alteraEmpregado(id, atributo, valor, banco, agencia, contaCorrente);
     }
 
@@ -268,9 +257,8 @@ public class Facade {
      * @param dataInicial início do intervalo (inclusive), "dd/mm/aaaa"
      * @param dataFinal fim do intervalo (exclusivo), "dd/mm/aaaa"
      * @return total de horas normais no período, formatado com vírgula
-     * @throws Exception se o empregado não existir, não for horista, ou as datas forem inválidas
      */
-    public String getHorasNormaisTrabalhadas(String id, String dataInicial, String dataFinal) throws Exception{
+    public String getHorasNormaisTrabalhadas(String id, String dataInicial, String dataFinal){
         return novoBancoDados.getHorasNormaisTrabalhadas(id, dataInicial, dataFinal);
     }
 
@@ -282,9 +270,8 @@ public class Facade {
      * @param dataInicial início do intervalo (inclusive), "dd/mm/aaaa"
      * @param dataFinal fim do intervalo (exclusivo), "dd/mm/aaaa"
      * @return total de horas extras no período, formatado com vírgula
-     * @throws Exception se o empregado não existir, não for horista, ou as datas forem inválidas
      */
-    public String getHorasExtrasTrabalhadas(String id, String dataInicial, String dataFinal) throws Exception{
+    public String getHorasExtrasTrabalhadas(String id, String dataInicial, String dataFinal){
         return novoBancoDados.getHorasExtrasTrabalhadas(id, dataInicial, dataFinal);
     }
 
@@ -296,9 +283,8 @@ public class Facade {
      * @param dataInicial início do intervalo (inclusive), "dd/mm/aaaa"
      * @param dataFinal fim do intervalo (exclusivo), "dd/mm/aaaa"
      * @return total vendido no período, formatado com vírgula
-     * @throws Exception se o empregado não existir, não for comissionado, ou as datas forem inválidas
      */
-    public String getVendasRealizadas(String id, String dataInicial, String dataFinal) throws Exception {
+    public String getVendasRealizadas(String id, String dataInicial, String dataFinal) {
         return novoBancoDados.getVendasRealizadas(id, dataInicial, dataFinal);
     }
 
@@ -310,9 +296,8 @@ public class Facade {
      * @param dataInicial início do intervalo (inclusive), "dd/mm/aaaa"
      * @param dataFinal fim do intervalo (exclusivo), "dd/mm/aaaa"
      * @return total de taxas no período, formatado com vírgula
-     * @throws Exception se o empregado não existir, não for sindicalizado, ou as datas forem inválidas
      */
-    public String getTaxasServico(String id, String dataInicial, String dataFinal) throws Exception {
+    public String getTaxasServico(String id, String dataInicial, String dataFinal) {
         return novoBancoDados.getTaxasServico(id, dataInicial, dataFinal);
     }
 
@@ -322,9 +307,9 @@ public class Facade {
      *
      * @param data data de referência da folha, "dd/mm/aaaa"
      * @param saida caminho do arquivo a ser gerado
-     * @throws Exception se a data for inválida ou ocorrer erro de escrita
+     * @throws IOException se ocorrer erro de escrita no arquivo
      */
-    public void rodaFolha(String data, String saida) throws Exception {
+    public void rodaFolha(String data, String saida) throws IOException {
         novoBancoDados.rodaFolha(data, saida);
     }
 
@@ -333,9 +318,8 @@ public class Facade {
      *
      * @param data data de referência da folha, "dd/mm/aaaa"
      * @return o total da folha, formatado com vírgula
-     * @throws Exception se a data for inválida
      */
-    public String totalFolha(String data) throws Exception {
+    public String totalFolha(String data) {
         return novoBancoDados.totalFolha(data);
     }
 
@@ -352,9 +336,9 @@ public class Facade {
      * @throws EmpregadoNaoRecebeEmBancoException se consultar dado bancário de quem não recebe em banco
      * @throws EmpregadoNaoEhComissionadoException se consultar comissão de quem não é comissionado
      * @throws AtributoNaoExisteException se o atributo não for reconhecido
-     * @throws Exception se o empregado não existir
+     * @throws EmpregadoNaoExisteException se o empregado não existir
      */
-    public String getAtributoEmpregado(String id,String atributo) throws Exception {
+    public String getAtributoEmpregado(String id,String atributo) {
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
 
         Empregado empregado = novoBancoDados.buscar(id);
@@ -407,9 +391,10 @@ public class Facade {
     /**
      * Desfaz o último comando que alterou o estado do sistema.
      *
-     * @throws Exception se o sistema já tiver sido encerrado, ou se não houver comando a desfazer
+     * @throws SistemaEncerradoException se o sistema já tiver sido encerrado
+     * @throws NaoHaComandoADesfazerException se não houver comando a desfazer
      */
-    public void undo() throws Exception {
+    public void undo() {
         verificarEncerrado();
         novoBancoDados.undo();
     }
@@ -417,9 +402,10 @@ public class Facade {
     /**
      * Refaz o último comando desfeito por {@link #undo()}.
      *
-     * @throws Exception se o sistema já tiver sido encerrado, ou se não houver comando a refazer
+     * @throws SistemaEncerradoException se o sistema já tiver sido encerrado
+     * @throws NaoHaComandoARefazerException se não houver comando a refazer
      */
-    public void redo() throws Exception {
+    public void redo() {
         verificarEncerrado();
         novoBancoDados.redo();
     }
@@ -428,9 +414,9 @@ public class Facade {
      * Consulta o número de empregados atualmente cadastrados.
      *
      * @return o número de empregados, como texto
-     * @throws Exception se o sistema já tiver sido encerrado
+     * @throws SistemaEncerradoException se o sistema já tiver sido encerrado
      */
-    public String getNumeroDeEmpregados() throws Exception {
+    public String getNumeroDeEmpregados() {
         verificarEncerrado();
         return String.valueOf(novoBancoDados.getNumeroDeEmpregados());
     }
@@ -451,18 +437,18 @@ public class Facade {
             if (new File(ARQUIVO).exists()) {
                 novoBancoDados.carregar(ARQUIVO);
             }
-        } catch (Exception e) {
+        } catch (IOException | ClassNotFoundException e) {
             throw new IllegalStateException("Nao foi possivel ler os dados", e);
         }
     }
     /** Grava os dados em arquivo e bloqueia novos comandos.*/
-    public void encerrarSistema() throws Exception {
+    public void encerrarSistema() throws IOException{
         novoBancoDados.gravar(ARQUIVO);
         encerrado = true;
     }
 
     /** Apaga todos os empregados e o arquivo de dados, e reabre o sistema. */
-    public void zerarSistema() throws Exception {
+    public void zerarSistema() throws IOException{
         encerrado = false;
 
         novoBancoDados.zerar();
