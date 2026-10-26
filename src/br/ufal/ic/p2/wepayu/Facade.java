@@ -324,6 +324,15 @@ public class Facade {
     }
 
     /**
+     * Cria uma nova agenda de pagamento e a disponibiliza para os empregados.
+     *
+     * @param descricao descrição da agenda, ex.: "semanal 2 5" ou "mensal 10"
+     */
+    public void criarAgendaDePagamentos(String descricao) {
+        novoBancoDados.criarAgendaDePagamentos(descricao);
+    }
+
+    /**
      * Consulta o valor de um atributo de um empregado (nome,
      * endereço, tipo, salário, dados de pagamento, sindicalização ou
      * comissão, conforme aplicável ao tipo do empregado).

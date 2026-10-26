@@ -32,7 +32,7 @@ public abstract class Empregado implements Serializable {
     private String endereco;
     /** Tipo do empregado: "horista", "assalariado" ou "comissionado". */
     private String tipo;
-    /** Salário do empregado (por hora, mensal ou quinzenal, dependendo do tipo). */
+    /** Salário do empregado (por hora para horistas; mensal para os demais tipos). */
     private String salario;
     /** Agenda de pagamento: define quando o empregado é pago e que período cada pagamento cobre. */
     private AgendaPagamento agenda;
@@ -97,7 +97,7 @@ public abstract class Empregado implements Serializable {
 
     /**
      * Calcula o pagamento bruto do empregado para a data informada,
-     * de acordo com a regra do seu tipo.
+     * de acordo com a regra do seu tipo e a agenda de pagamento dele.
      *
      * @param dataPagamento data do pagamento
      * @return o valor bruto a pagar
@@ -135,7 +135,9 @@ public abstract class Empregado implements Serializable {
     }
     public void setSalario(String salario){ this.salario = salario; }
 
+    /** @return a agenda de pagamento do empregado */
     public AgendaPagamento getAgenda(){ return agenda; }
+    /** @param agenda nova agenda de pagamento do empregado */
     public void setAgenda(AgendaPagamento agenda){ this.agenda = agenda; }
 
     public String getMetodoPagamento(){ return metodoPagamento; }
@@ -203,6 +205,13 @@ public abstract class Empregado implements Serializable {
         listaTaxaServico.add(novaTaxaServico);
     }
 
+    /**
+     * Copia para este empregado os cartões de ponto, vendas e taxas de
+     * serviço de {@code outro} (em listas novas, sem compartilhá-las),
+     * usado ao trocar o tipo de um empregado.
+     *
+     * @param outro empregado de onde os lançamentos serão copiados
+     */
     public void copiarLancamentosDe(Empregado outro) {
         this.listaCartoes = new ArrayList<>(outro.listaCartoes);
         this.listaVendas = new ArrayList<>(outro.listaVendas);

@@ -12,9 +12,10 @@ import java.time.LocalDate;
 
 /**
  * Camada de persistência e regras de negócio do sistema WePayU: mantém
- * a lista de empregados em memória, gera os identificadores, valida e
- * registra lançamentos (cartões de ponto, vendas, taxas de serviço),
- * calcula a folha de pagamento e controla o histórico de undo/redo.
+ * a lista de empregados e as agendas de pagamento disponíveis em memória,
+ * gera os identificadores, valida e registra lançamentos (cartões de
+ * ponto, vendas, taxas de serviço), calcula a folha de pagamento e
+ * controla o histórico de undo/redo.
  *
  * <p>Esta classe é usada pela {@link br.ufal.ic.p2.wepayu.Facade}, que
  * expõe uma API mais simples para o restante do sistema (e para os
@@ -33,6 +34,7 @@ public class BancoDados {
     /** Pilha de estados desfeitos, usada pelo comando {@link #redo()}. */
     private Stack<EstadoBancoDados> pilhaRedo = new Stack<>();
 
+    /** Cria um banco de dados vazio, com apenas as três agendas de pagamento padrão disponíveis. */
     public BancoDados() {
         restaurarAgendasPadrao();
     }
@@ -153,12 +155,14 @@ public class BancoDados {
 
     /**
      * Altera um atributo simples de um empregado (nome, endereço,
-     * salário, comissão, sindicalização ou método de pagamento sem
-     * dados adicionais).
+     * salário, comissão, sindicalização, agenda de pagamento ou método
+     * de pagamento sem dados adicionais).
      *
      * @param id identificador do empregado
      * @param atributo nome do atributo a alterar
      * @param valor novo valor do atributo
+     * @throws AgendaDePagamentoNaoDisponivelException se {@code atributo} for
+     *         "agendaPagamento" e a agenda informada não estiver disponível
      */
     public void alteraEmpregado(String id, String atributo, String valor) {
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
@@ -318,7 +322,8 @@ public class BancoDados {
     /**
      * Muda o tipo de um empregado para "horista" ou "assalariado",
      * criando um novo objeto do tipo correspondente e copiando para
-     * ele os dados cadastrais comuns do empregado antigo.
+     * ele os dados cadastrais comuns do empregado antigo. A agenda de
+     * pagamento volta a ser a padrão do novo tipo.
      *
      * @param id identificador do empregado
      * @param novoTipo "horista" ou "assalariado"
@@ -361,7 +366,8 @@ public class BancoDados {
     /**
      * Muda o tipo de um empregado para "comissionado", criando um
      * novo {@link Comissionado} e copiando para ele os dados
-     * cadastrais comuns do empregado antigo.
+     * cadastrais comuns do empregado antigo. A agenda de pagamento
+     * volta a ser a padrão dos comissionados.
      *
      * @param id identificador do empregado
      * @param novoTipo deve ser "comissionado"
@@ -389,9 +395,11 @@ public class BancoDados {
     }
 
     /**
-     * Copia para {@code novo} os dados cadastrais comuns de
-     * {@code antigo} (id, forma de pagamento, sindicalização e data
-     * do último pagamento), usado ao trocar o tipo de um empregado.
+     * Copia para {@code novo} os dados comuns de {@code antigo} (id,
+     * método e dados de pagamento, sindicalização, data do último
+     * pagamento, descontos pendentes e lançamentos), usado ao trocar o
+     * tipo de um empregado. A agenda de pagamento não é copiada: o novo
+     * empregado fica com a agenda padrão do seu tipo.
      *
      * @param antigo empregado original
      * @param novo empregado recém-criado, que receberá os dados
@@ -411,9 +419,9 @@ public class BancoDados {
     }
 
     /**
-     * Remove todos os empregados cadastrados e reinicia o contador de
-     * identificadores, usado para reiniciar o sistema entre execuções
-     * de testes.
+     * Remove todos os empregados cadastrados, reinicia o contador de
+     * identificadores e deixa disponíveis apenas as agendas de pagamento
+     * padrão, usado para reiniciar o sistema entre execuções de testes.
      */
     public void zerar() {
         salvarEstado();
@@ -801,7 +809,7 @@ public class BancoDados {
     /**
      * Calcula o valor total bruto da folha de pagamento de uma data:
      * a soma dos pagamentos de todos os empregados que devem ser
-     * pagos nessa data, de acordo com a regra de cada tipo.
+     * pagos nessa data, de acordo com a agenda de cada um.
      *
      * @param data data de referência da folha, "dd/mm/aaaa"
      * @return o total da folha, formatado com vírgula
@@ -824,8 +832,8 @@ public class BancoDados {
 
     /**
      * Calcula o total de descontos de um empregado para o período de
-     * pagamento correspondente ao seu tipo: taxa sindical diária (se
-     * sindicalizado) mais as taxas de serviço lançadas no período.
+     * pagamento da sua agenda: taxa sindical diária (se sindicalizado)
+     * mais as taxas de serviço lançadas no período.
      *
      * @param empregado empregado a calcular os descontos
      * @param dataPagamento data do pagamento
@@ -886,10 +894,12 @@ public class BancoDados {
      * Gera o relatório da folha de pagamento de uma data em um
      * arquivo de texto, com uma seção para cada tipo de empregado
      * (horistas, assalariados e comissionados), listados em ordem
-     * alfabética, seguida do total geral da folha.
+     * alfabética, seguida do total geral da folha. Só entram os
+     * empregados cuja agenda de pagamento cai nessa data.
      *
      * @param data data de referência da folha, "dd/mm/aaaa"
      * @param saida caminho do arquivo de saída a ser gerado
+     * @throws IOException se não for possível escrever o arquivo de saída
      */
     public void rodaFolha(String data, String saida) throws IOException  {
         LocalDate dataPagamento = Utilitarios.validarData(data);
@@ -1155,6 +1165,13 @@ public class BancoDados {
         return listaEmpregados.size();
     }
 
+    /**
+     * Grava em arquivo o contador de identificadores, os empregados e as
+     * agendas de pagamento disponíveis.
+     *
+     * @param arquivo caminho do arquivo a ser gravado
+     * @throws IOException se não for possível escrever o arquivo
+     */
     public void gravar(String arquivo) throws IOException {
         try (ObjectOutputStream saida = new ObjectOutputStream(new FileOutputStream(arquivo))) {
             saida.writeInt(contador);
@@ -1163,6 +1180,14 @@ public class BancoDados {
         }
     }
 
+    /**
+     * Lê de um arquivo o que foi gravado por {@link #gravar(String)}:
+     * contador de identificadores, empregados e agendas de pagamento.
+     *
+     * @param arquivo caminho do arquivo a ser lido
+     * @throws IOException se não for possível ler o arquivo
+     * @throws ClassNotFoundException se o arquivo tiver classes desconhecidas
+     */
     @SuppressWarnings("unchecked")
     public void carregar(String arquivo) throws IOException, ClassNotFoundException {
         try (ObjectInputStream entrada = new ObjectInputStream(new FileInputStream(arquivo))) {

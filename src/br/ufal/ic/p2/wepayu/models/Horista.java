@@ -21,7 +21,13 @@ public class Horista extends Empregado{
         super(nome, endereco, tipo, salario);
     }
 
-    /** Horas normais (até 8h por dia) dos cartões dentro do período que termina em {@code dataPagamento}. */
+    /**
+     * Soma as horas normais (até 8h por dia) dos cartões dentro do período
+     * que termina em {@code dataPagamento}.
+     *
+     * @param dataPagamento data do pagamento
+     * @return total de horas normais no período
+     */
     public BigDecimal horasNormaisNoPeriodo(LocalDate dataPagamento) {
         BigDecimal total = BigDecimal.ZERO;
         LocalDate inicio = inicioPeriodo(dataPagamento);
@@ -35,7 +41,13 @@ public class Horista extends Empregado{
         return total;
     }
 
-    /** Horas extras (acima de 8h por dia) dos cartões dentro do período que termina em {@code dataPagamento}. */
+    /**
+     * Soma as horas extras (acima de 8h por dia) dos cartões dentro do período
+     * que termina em {@code dataPagamento}.
+     *
+     * @param dataPagamento data do pagamento
+     * @return total de horas extras no período
+     */
     public BigDecimal horasExtrasNoPeriodo(LocalDate dataPagamento) {
         BigDecimal total = BigDecimal.ZERO;
         LocalDate inicio = inicioPeriodo(dataPagamento);
@@ -49,7 +61,13 @@ public class Horista extends Empregado{
         return total;
     }
 
-    /** Horas normais ao valor da hora, mais horas extras a 1,5x o valor da hora. */
+    /**
+     * Calcula o pagamento bruto: horas normais ao valor da hora, mais
+     * horas extras a 1,5x o valor da hora, no período da agenda.
+     *
+     * @param dataPagamento data do pagamento
+     * @return o valor bruto a pagar
+     */
     @Override
     public BigDecimal calcularPagamento(LocalDate dataPagamento) {
         BigDecimal salarioHora = new BigDecimal(getSalario().replace(",", "."));

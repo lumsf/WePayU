@@ -4,8 +4,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
- * Empregado do tipo assalariado, que recebe um salário mensal fixo,
- * pago sempre no último dia útil do mês.
+ * Empregado do tipo assalariado, que recebe um salário mensal fixo.
+ * Por padrão é pago no último dia útil do mês ("mensal $"), mas pode
+ * escolher outra {@link AgendaPagamento}; nesse caso recebe a parte do
+ * salário mensal correspondente ao período da agenda.
  */
 public class Assalariado extends Empregado{
     /**
@@ -22,7 +24,13 @@ public class Assalariado extends Empregado{
         super(nome, endereco, tipo, salario);
     }
 
-    /** O pagamento do assalariado é a parte do salário mensal que cabe na agenda dele. */
+    /**
+     * O pagamento do assalariado é a parte do salário mensal que cabe na
+     * agenda dele.
+     *
+     * @param dataPagamento data do pagamento
+     * @return o valor bruto a pagar
+     */
     @Override
     public BigDecimal calcularPagamento(LocalDate dataPagamento) {
         BigDecimal salarioMensal = new BigDecimal(getSalario().replace(",", "."));
