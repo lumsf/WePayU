@@ -1,11 +1,10 @@
 package br.ufal.ic.p2.wepayu.models;
 
-import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoExisteException;
 import br.ufal.ic.p2.wepayu.Exception.EnderecoNaoPodeSerNuloException;
 import br.ufal.ic.p2.wepayu.Exception.NomeNaoPodeSerNuloException;
 
-import javax.swing.plaf.basic.BasicIconFactory;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -23,7 +22,7 @@ import java.io.Serializable;
  * calculado; esta classe concentra apenas os dados e as regras
  * comuns de cadastro.</p>
  */
-public class Empregado implements Serializable {
+public abstract class Empregado implements Serializable {
     private static final long serialVersionUID = 1L;
     /** Identificador único do empregado (ex.: "id1", "id2", ...). */
     private String id;
@@ -35,10 +34,12 @@ public class Empregado implements Serializable {
     private String tipo;
     /** Salário do empregado (por hora, mensal ou quinzenal, dependendo do tipo). */
     private String salario;
+    /** Agenda de pagamento: define quando o empregado é pago e que período cada pagamento cobre. */
+    private AgendaPagamento agenda;
     /** Forma de pagamento: "emMaos", "banco" ou "correios". */
     private String metodoPagamento;
-    /** Indica se o empregado é sindicalizado: "true" ou "false". */
-    private String sindicalizado;
+    /** Indica se o empregado é sindicalizado. */
+    private boolean sindicalizado;
     /** Identificação do sindicato ao qual o empregado pertence (se sindicalizado). */
     private String idSindicato;
     /** Taxa sindical diária cobrada do empregado (se sindicalizado). */
@@ -61,9 +62,6 @@ public class Empregado implements Serializable {
     /** Taxas de serviço lançadas para este empregado (aplicável a sindicalizados). */
     private List<TaxaServico> listaTaxaServico = new ArrayList<>();
 
-    /** Construtor padrão, usado internamente (ex.: cópias de estado para undo/redo). */
-    public Empregado(){}
-
     /**
      * Cria um novo empregado com os dados cadastrais básicos.
      * Por padrão, o empregado é criado não sindicalizado e com
@@ -82,9 +80,29 @@ public class Empregado implements Serializable {
         this.endereco = endereco;
         this.tipo = tipo;
         this.salario = salario;
-        this.sindicalizado = "false";
         this.metodoPagamento = "emMaos";
+        this.agenda = AgendaPagamento.padraoDoTipo(tipo);
     }
+
+    /**
+     * Calcula a data em que começa o período de pagamento que termina
+     * em {@code dataPagamento}, de acordo com a agenda do empregado.
+     *
+     * @param dataPagamento data do pagamento
+     * @return primeiro dia do período
+     */
+    public LocalDate inicioPeriodo(LocalDate dataPagamento) {
+        return agenda.inicioPeriodo(dataPagamento);
+    }
+
+    /**
+     * Calcula o pagamento bruto do empregado para a data informada,
+     * de acordo com a regra do seu tipo.
+     *
+     * @param dataPagamento data do pagamento
+     * @return o valor bruto a pagar
+     */
+    public abstract BigDecimal calcularPagamento(LocalDate dataPagamento);
 
     // ---- Getters e setters dos dados cadastrais ----
 
@@ -117,11 +135,14 @@ public class Empregado implements Serializable {
     }
     public void setSalario(String salario){ this.salario = salario; }
 
+    public AgendaPagamento getAgenda(){ return agenda; }
+    public void setAgenda(AgendaPagamento agenda){ this.agenda = agenda; }
+
     public String getMetodoPagamento(){ return metodoPagamento; }
     public void setMetodoPagamento(String metodoPagamento){ this.metodoPagamento = metodoPagamento; }
 
-    public String getSindicalizado(){ return sindicalizado; }
-    public void setSindicalizado(String sindicalizado){ this.sindicalizado = sindicalizado; }
+    public boolean isSindicalizado() { return sindicalizado; }
+    public void setSindicalizado(boolean sindicalizado) { this.sindicalizado = sindicalizado; }
 
     public String getIdSindicato(){ return idSindicato; }
     public void setIdSindicato(String idSindicato){ this.idSindicato = idSindicato; }

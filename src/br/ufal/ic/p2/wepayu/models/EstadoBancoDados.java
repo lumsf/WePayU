@@ -1,7 +1,5 @@
 package br.ufal.ic.p2.wepayu.models;
 
-import br.ufal.ic.p2.wepayu.Exception.EmpregadoNaoExisteException;
-
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +29,6 @@ public class EstadoBancoDados {
      *
      * @param listaEmpregados lista de empregados a ser copiada
      * @param contador valor atual do contador de identificadores
-     * @throws Exception se ocorrer erro ao recriar algum empregado
      */
     public EstadoBancoDados(List<Empregado> listaEmpregados, int contador) {
         this.empregados = new ArrayList<>();
@@ -56,7 +53,8 @@ public class EstadoBancoDados {
 
             copia.setId(empregado.getId());
             copia.setMetodoPagamento(empregado.getMetodoPagamento());
-            copia.setSindicalizado(empregado.getSindicalizado());
+            copia.setAgenda(empregado.getAgenda());
+            copia.setSindicalizado(empregado.isSindicalizado());
             copia.setIdSindicato(empregado.getIdSindicato());
             copia.setTaxaSindical(empregado.getTaxaSindical());
             copia.setBanco(empregado.getBanco());

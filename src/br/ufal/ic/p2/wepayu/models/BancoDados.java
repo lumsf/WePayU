@@ -25,18 +25,45 @@ public class BancoDados {
     private List<Empregado> listaEmpregados = new ArrayList<>();
     /** Contador usado para gerar o próximo identificador de empregado ("id1", "id2", ...). */
     private int contador = 0;
+    /** Agendas de pagamento que os empregados podem escolher (as padrão mais as criadas). */
+    private List<AgendaPagamento> agendasDisponiveis = new ArrayList<>();
 
     /** Pilha de estados anteriores, usada pelo comando {@link #undo()}. */
     private Stack<EstadoBancoDados> pilhaUndo = new Stack<>();
     /** Pilha de estados desfeitos, usada pelo comando {@link #redo()}. */
     private Stack<EstadoBancoDados> pilhaRedo = new Stack<>();
 
+    public BancoDados() {
+        restaurarAgendasPadrao();
+    }
+
+    /** Deixa como agendas disponíveis apenas as três padrão do sistema. */
+    private void restaurarAgendasPadrao() {
+        agendasDisponiveis.clear();
+        agendasDisponiveis.add(AgendaPagamento.criar("semanal 5"));
+        agendasDisponiveis.add(AgendaPagamento.criar("mensal $"));
+        agendasDisponiveis.add(AgendaPagamento.criar("semanal 2 5"));
+    }
+
+    /**
+     * Cria uma nova agenda de pagamento e a disponibiliza para os empregados.
+     *
+     * @param descricao descrição da agenda, ex.: "semanal 2 5" ou "mensal 10"
+     * @throws DescricaoDeAgendaInvalidaException se a descrição não seguir um formato válido
+     * @throws AgendaDePagamentosJaExisteException se a agenda já existir
+     */
+    public void criarAgendaDePagamentos(String descricao) {
+        AgendaPagamento nova = AgendaPagamento.criar(descricao);
+
+        if (agendasDisponiveis.contains(nova)) throw new AgendaDePagamentosJaExisteException();
+
+        agendasDisponiveis.add(nova);
+    }
+
     /**
      * Empilha uma cópia (snapshot) do estado atual na pilha de undo e
      * limpa a pilha de redo. Deve ser chamado antes de qualquer
      * alteração de estado, para que ela possa ser desfeita depois.
-     *
-     * @throws Exception se ocorrer erro ao criar o snapshot
      */
     private void salvarEstado() {
 
@@ -52,7 +79,6 @@ public class BancoDados {
      * ele um novo identificador único.
      *
      * @param novoEmpregado empregado já validado, a ser cadastrado
-     * @throws Exception se ocorrer erro ao salvar o estado anterior
      */
     public void adicionarEmpregado(Empregado novoEmpregado) {
         salvarEstado();
@@ -71,7 +97,6 @@ public class BancoDados {
      * @param id identificador do empregado a ser removido
      * @throws IdentificacaoDoEmpregadoNaoPodeSerNulaException se o id for nulo/vazio
      * @throws EmpregadoNaoExisteException se não existir empregado com esse id
-     * @throws Exception se ocorrer erro ao salvar o estado anterior
      */
     public void remover(String id){
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
@@ -134,7 +159,6 @@ public class BancoDados {
      * @param id identificador do empregado
      * @param atributo nome do atributo a alterar
      * @param valor novo valor do atributo
-     * @throws Exception se o id/atributo/valor forem inválidos para o caso
      */
     public void alteraEmpregado(String id, String atributo, String valor) {
         if(id == null || id.isEmpty()) throw new IdentificacaoDoEmpregadoNaoPodeSerNulaException();
@@ -166,13 +190,24 @@ public class BancoDados {
             if (!valor.equals("true") && !valor.equals("false")) throw new ValorDeveSerTrueOuFalseException();
 
             salvarEstado();
-            e.setSindicalizado(valor);
+            e.setSindicalizado(Boolean.parseBoolean(valor));
 
             if (valor.equals("false")) {
                 e.setIdSindicato(null);
                 e.setTaxaSindical(null);
                 return;
             }
+        }
+        else if(atributo.equals("agendaPagamento")){
+            AgendaPagamento escolhida = null;
+
+            for (AgendaPagamento agenda : agendasDisponiveis) {
+                if (agenda.getDescricao().equals(valor)) escolhida = agenda;
+            }
+            if (escolhida == null) throw new AgendaDePagamentoNaoDisponivelException();
+
+            salvarEstado();
+            e.setAgenda(escolhida);
         }
         else if(atributo.equals("metodoPagamento")){
             if(!valor.equals("emMaos") && !valor.equals("banco") && !valor.equals("correios")){
@@ -203,8 +238,6 @@ public class BancoDados {
      * @param valor "true" para sindicalizar, "false" para remover a sindicalização
      * @param idSindicato identificação do sindicato (obrigatória se valor="true")
      * @param taxaSindical taxa sindical diária (obrigatória se valor="true")
-     * @throws Exception se os dados forem inválidos ou o sindicato já
-     *         estiver em uso por outro empregado
      */
     public void alteraEmpregado(String id, String atributo, String valor, String idSindicato,
                                 String taxaSindical){
@@ -215,7 +248,7 @@ public class BancoDados {
 
         if (valor.equals("false")) {
             salvarEstado();
-            empregado.setSindicalizado("false");
+            empregado.setSindicalizado(false);
             empregado.setIdSindicato(null);
             empregado.setTaxaSindical(null);
             return;
@@ -231,7 +264,7 @@ public class BancoDados {
         for (int j = 0; j < listaEmpregados.size(); j++) {
             Empregado outro = listaEmpregados.get(j);
 
-            if (!outro.getId().equals(id) && outro.getSindicalizado().equals("true")
+            if (!outro.getId().equals(id) && outro.isSindicalizado()
                     && outro.getIdSindicato() != null
                     && outro.getIdSindicato().equals(idSindicato))
                 throw new HaOutroEmpregadoComEstaIdentificacaoDeSindicatoException();
@@ -239,7 +272,7 @@ public class BancoDados {
 
         salvarEstado();
 
-        empregado.setSindicalizado("true");
+        empregado.setSindicalizado(true);
         empregado.setIdSindicato(idSindicato);
         empregado.setTaxaSindical(taxaFormatada);
     }
@@ -254,7 +287,6 @@ public class BancoDados {
      * @param banco nome do banco (obrigatório se valor="banco")
      * @param agencia agência bancária (obrigatório se valor="banco")
      * @param contaCorrente número da conta corrente (obrigatório se valor="banco")
-     * @throws Exception se os dados forem inválidos
      */
     public void alteraEmpregado(String id, String atributo, String valor, String banco, String agencia,
                                 String contaCorrente){
@@ -291,7 +323,6 @@ public class BancoDados {
      * @param id identificador do empregado
      * @param novoTipo "horista" ou "assalariado"
      * @param salario novo salário (se nulo, reaproveita o salário atual)
-     * @throws Exception se o tipo for inválido ou o empregado não existir
      */
     public void mudaTipoEmpregado(String id, String novoTipo, String salario){
         Empregado antigo = buscar(id);
@@ -336,7 +367,6 @@ public class BancoDados {
      * @param novoTipo deve ser "comissionado"
      * @param salario ignorado (mantém-se o salário atual do empregado)
      * @param comissao taxa de comissão do novo empregado comissionado
-     * @throws Exception se o tipo for inválido ou o empregado não existir
      */
     public void mudaTipoEmpregado(String id, String novoTipo, String salario, String comissao){
         Empregado antigo = buscar(id);
@@ -372,7 +402,7 @@ public class BancoDados {
         novo.setBanco(antigo.getBanco());
         novo.setAgencia(antigo.getAgencia());
         novo.setContaCorrente(antigo.getContaCorrente());
-        novo.setSindicalizado(antigo.getSindicalizado());
+        novo.setSindicalizado(antigo.isSindicalizado());
         novo.setIdSindicato(antigo.getIdSindicato());
         novo.setTaxaSindical(antigo.getTaxaSindical());
         novo.setDataUltimoPagamento(antigo.getDataUltimoPagamento());
@@ -384,13 +414,12 @@ public class BancoDados {
      * Remove todos os empregados cadastrados e reinicia o contador de
      * identificadores, usado para reiniciar o sistema entre execuções
      * de testes.
-     *
-     * @throws Exception se ocorrer erro ao salvar o estado anterior
      */
     public void zerar() {
         salvarEstado();
         listaEmpregados.clear();
         contador = 0;
+        restaurarAgendasPadrao();
     }
 
     /**
@@ -410,7 +439,7 @@ public class BancoDados {
 
         if(!(empregado instanceof Horista)) throw new EmpregadoNaoEhHoristaException();
 
-        validarData(data);
+        Utilitarios.validarData(data);
 
         BigDecimal quantidadeHoras;
 
@@ -430,31 +459,6 @@ public class BancoDados {
     }
 
     /**
-     * Converte e valida uma data no formato "dd/mm/aaaa".
-     *
-     * @param data texto da data a validar
-     * @return a data convertida para {@link LocalDate}
-     * @throws DataInvalidaException se o texto não representar uma data válida
-     */
-    private LocalDate validarData(String data){
-        try{
-            String[] partes = data.split("/");
-
-            if(partes.length != 3) throw new DataInvalidaException();
-
-            int dia = Integer.parseInt(partes[0]);
-            int mes = Integer.parseInt(partes[1]);
-            int ano = Integer.parseInt(partes[2]);
-
-            return LocalDate.of(ano, mes, dia);
-        }
-        catch(Exception e){
-            if(e instanceof DataInvalidaException) throw (DataInvalidaException) e;
-            throw new DataInvalidaException();
-        }
-    }
-
-    /**
      * Lança uma venda para um empregado comissionado.
      *
      * @param id identificador do empregado
@@ -471,7 +475,7 @@ public class BancoDados {
 
         if(!(empregado instanceof Comissionado)) throw new EmpregadoNaoEhComissionadoException();
 
-        validarData(data);
+        Utilitarios.validarData(data);
 
         BigDecimal valorVenda;
 
@@ -512,7 +516,7 @@ public class BancoDados {
 
         LocalDate inicio;
         try{
-            inicio = validarData(dataInicial);
+            inicio = Utilitarios.validarData(dataInicial);
         }
         catch (DataInvalidaException e){
             throw new DataInicialInvalidaException();
@@ -520,7 +524,7 @@ public class BancoDados {
 
         LocalDate fim;
         try{
-            fim = validarData(dataFinal);
+            fim = Utilitarios.validarData(dataFinal);
         }
         catch (DataInvalidaException e){
             throw new DataFinalInvalidaException();
@@ -533,7 +537,7 @@ public class BancoDados {
         for(int j = 0; j < empregado.getListaVendas().size(); j++){
             Venda venda = empregado.getListaVendas().get(j);
 
-            LocalDate dataVenda = validarData(venda.getData());
+            LocalDate dataVenda = Utilitarios.validarData(venda.getData());
 
             if(!dataVenda.isBefore(inicio) && dataVenda.isBefore(fim)){
                 BigDecimal valor = new BigDecimal(venda.getValor().replace(",", "."));
@@ -541,24 +545,7 @@ public class BancoDados {
                 total = total.add(valor);
             }
         }
-        return formatarDinheiro(total);
-    }
-
-    /**
-     * Formata um valor monetário com duas casas decimais e vírgula
-     * como separador decimal (arredondamento "half up").
-     *
-     * @param valor valor a formatar
-     * @return o valor formatado, ex.: "1234,56"
-     */
-    private String formatarDinheiro(BigDecimal valor){
-        valor = valor.setScale(2, BigDecimal.ROUND_HALF_UP);
-
-        String resultado = valor.toString();
-
-        resultado = resultado.replace(".", ",");
-
-        return resultado;
+        return Utilitarios.formatarDinheiro(total);
     }
 
     /**
@@ -588,7 +575,7 @@ public class BancoDados {
 
         if(empregado == null) throw new MembroNaoExisteException();
 
-        validarData(data);
+        Utilitarios.validarData(data);
 
         BigDecimal valorTaxa;
 
@@ -626,11 +613,11 @@ public class BancoDados {
 
         Empregado empregado = buscar(id);
 
-        if(!(empregado.getSindicalizado().equals("true"))) throw new EmpregadoNaoEhSindicalizadoException();
+        if(!empregado.isSindicalizado()) throw new EmpregadoNaoEhSindicalizadoException();
 
         LocalDate inicio;
         try{
-            inicio = validarData(dataInicial);
+            inicio = Utilitarios.validarData(dataInicial);
         }
         catch (DataInvalidaException e){
             throw new DataInicialInvalidaException();
@@ -638,7 +625,7 @@ public class BancoDados {
 
         LocalDate fim;
         try{
-            fim = validarData(dataFinal);
+            fim = Utilitarios.validarData(dataFinal);
         }
         catch (DataInvalidaException e){
             throw new DataFinalInvalidaException();
@@ -651,7 +638,7 @@ public class BancoDados {
         for(int j = 0; j < empregado.getListaTaxaServico().size(); j++){
             TaxaServico taxaServico = empregado.getListaTaxaServico().get(j);
 
-            LocalDate dataTaxaServico = validarData(taxaServico.getData());
+            LocalDate dataTaxaServico = Utilitarios.validarData(taxaServico.getData());
 
             if(!dataTaxaServico.isBefore(inicio) && dataTaxaServico.isBefore(fim)){
                 BigDecimal valorTaxa = new BigDecimal(taxaServico.getValor().replace(",", "."));
@@ -659,7 +646,7 @@ public class BancoDados {
                 total = total.add(valorTaxa);
             }
         }
-        return formatarDinheiro(total);
+        return Utilitarios.formatarDinheiro(total);
     }
 
     /**
@@ -685,7 +672,7 @@ public class BancoDados {
 
         LocalDate inicio;
         try{
-            inicio = validarData(dataInicial);
+            inicio = Utilitarios.validarData(dataInicial);
         }
         catch (DataInvalidaException e){
             throw new DataInicialInvalidaException();
@@ -693,7 +680,7 @@ public class BancoDados {
 
         LocalDate fim;
         try{
-            fim = validarData(dataFinal);
+            fim = Utilitarios.validarData(dataFinal);
         }
         catch (DataInvalidaException e){
             throw new DataFinalInvalidaException();
@@ -706,7 +693,7 @@ public class BancoDados {
         for(int j = 0; j < empregado.getListaCartoes().size(); j++){
             CartaoDePonto cartaoDePonto = empregado.getListaCartoes().get(j);
 
-            LocalDate dataCartao = validarData(cartaoDePonto.getData());
+            LocalDate dataCartao = Utilitarios.validarData(cartaoDePonto.getData());
 
             if(!dataCartao.isBefore(inicio) && dataCartao.isBefore(fim)){
                 BigDecimal horas = new BigDecimal(cartaoDePonto.getHoras().replace(",", "."));
@@ -717,32 +704,7 @@ public class BancoDados {
                 }
             }
         }
-        return formatarHoras(total);
-    }
-
-    private BigDecimal horasNormaisNoPeriodo(Empregado empregado, LocalDate dataPagamento) {
-        BigDecimal total = BigDecimal.ZERO;
-        LocalDate inicio = dataPagamento.minusDays(6);
-        for (CartaoDePonto cartao : empregado.getListaCartoes()) {
-            LocalDate dataCartao = validarData(cartao.getData());
-            if (!dataCartao.isBefore(inicio) && !dataCartao.isAfter(dataPagamento)) {
-                BigDecimal horas = new BigDecimal(cartao.getHoras().replace(",", "."));
-                total = total.add(horas.min(new BigDecimal("8")));   // o que passa de 8h não é normal
-            }
-        }
-        return total;
-    }
-
-    private BigDecimal horasExtrasNoPeriodo(Empregado empregado, LocalDate dataPagamento) {
-        BigDecimal total = BigDecimal.ZERO;
-        LocalDate inicio = dataPagamento.minusDays(6);
-        for (CartaoDePonto cartao : empregado.getListaCartoes()) {
-            LocalDate dataCartao = validarData(cartao.getData());
-            if (!dataCartao.isBefore(inicio) && !dataCartao.isAfter(dataPagamento)) {
-                BigDecimal horas = new BigDecimal(cartao.getHoras().replace(",", "."));
-                total = total.add(horas.subtract(new BigDecimal("8")).max(BigDecimal.ZERO));            }
-        }
-        return total;
+        return Utilitarios.formatarHoras(total);
     }
 
     /**
@@ -768,7 +730,7 @@ public class BancoDados {
 
         LocalDate inicio;
         try{
-            inicio = validarData(dataInicial);
+            inicio = Utilitarios.validarData(dataInicial);
         }
         catch (DataInvalidaException e){
             throw new DataInicialInvalidaException();
@@ -776,7 +738,7 @@ public class BancoDados {
 
         LocalDate fim;
         try{
-            fim = validarData(dataFinal);
+            fim = Utilitarios.validarData(dataFinal);
         }
         catch (DataInvalidaException e){
             throw new DataFinalInvalidaException();
@@ -789,7 +751,7 @@ public class BancoDados {
         for(int j = 0; j < empregado.getListaCartoes().size(); j++){
             CartaoDePonto cartaoDePonto = empregado.getListaCartoes().get(j);
 
-            LocalDate dataCartao = validarData(cartaoDePonto.getData());
+            LocalDate dataCartao = Utilitarios.validarData(cartaoDePonto.getData());
 
             if(!dataCartao.isBefore(inicio) && dataCartao.isBefore(fim)){
                 BigDecimal horas = new BigDecimal(cartaoDePonto.getHoras().replace(",", "."));
@@ -800,46 +762,31 @@ public class BancoDados {
                 }
             }
         }
-        return formatarHoras(total);
-    }
-
-    /**
-     * Formata uma quantidade de horas removendo zeros à direita
-     * desnecessários e usando vírgula como separador decimal.
-     *
-     * @param valor quantidade de horas a formatar
-     * @return o valor formatado, ex.: "8" ou "7,5"
-     */
-    private String formatarHoras(BigDecimal valor) {
-        valor = valor.stripTrailingZeros();
-
-        return valor.toPlainString().replace(".", ",");
+        return Utilitarios.formatarHoras(total);
     }
 
     /**
      * Verifica se um empregado deve ser pago em uma determinada data,
-     * de acordo com a regra de pagamento do seu tipo: horistas são
-     * pagos toda sexta-feira (se tiverem cartões no período),
-     * assalariados no último dia útil do mês, e comissionados a cada
-     * 14 dias a partir de 14/01/2005.
+     * de acordo com a agenda de pagamento dele. Horistas só são pagos
+     * se tiverem algum cartão de ponto no período.
      *
      * @param empregado empregado a verificar
      * @param data data candidata a pagamento, "dd/mm/aaaa"
      * @return {@code true} se o empregado deve ser pago nessa data
      */
     public boolean deveSerPago(Empregado empregado, String data) {
-        LocalDate dataPagamento = validarData(data);
+        LocalDate dataPagamento = Utilitarios.validarData(data);
+
+        if (!empregado.getAgenda().ehDiaDePagamento(dataPagamento)) {
+            return false;
+        }
 
         if (empregado instanceof Horista) {
-            if(dataPagamento.getDayOfWeek().getValue() != 5){
-                return false;
-            }
-
-            LocalDate inicio = dataPagamento.minusDays(6);
+            LocalDate inicio = empregado.inicioPeriodo(dataPagamento);
 
             for(int j = 0; j < empregado.getListaCartoes().size(); j++){
                 LocalDate dataCartao =
-                        validarData(empregado.getListaCartoes().get(j).getData());
+                        Utilitarios.validarData(empregado.getListaCartoes().get(j).getData());
 
                 if(!dataCartao.isBefore(inicio) && !dataCartao.isAfter(dataPagamento)){
                     return true;
@@ -848,57 +795,7 @@ public class BancoDados {
             return false;
         }
 
-        if (empregado instanceof Comissionado) {
-            return devePagarComissionado(dataPagamento);
-        }
-
-        if (empregado instanceof Assalariado) {
-            return devePagarAssalariado(dataPagamento);
-        }
-        return false;
-    }
-
-    /**
-     * Verifica se {@code data} é o dia de pagamento de assalariados
-     * naquele mês: o último dia do mês, antecipado para sexta-feira
-     * caso caia num fim de semana.
-     *
-     * @param data data candidata a pagamento
-     * @return {@code true} se for o dia de pagamento dos assalariados
-     */
-    public boolean devePagarAssalariado(LocalDate data) {
-        LocalDate ultimoDia = data.withDayOfMonth(data.lengthOfMonth());
-
-        int diaDaSemana = ultimoDia.getDayOfWeek().getValue();
-
-        if (diaDaSemana == 6) {
-            ultimoDia = ultimoDia.minusDays(1);
-        }
-        else if (diaDaSemana == 7) {
-            ultimoDia = ultimoDia.minusDays(2);
-        }
-
-        return data.equals(ultimoDia);
-    }
-
-    /**
-     * Verifica se {@code data} é um dia de pagamento de comissionados:
-     * um múltiplo de 14 dias a partir do primeiro pagamento, em
-     * 14/01/2005.
-     *
-     * @param data data candidata a pagamento
-     * @return {@code true} se for um dia de pagamento dos comissionados
-     */
-    private boolean devePagarComissionado(LocalDate data) {
-        LocalDate primeiroPagamento = LocalDate.of(2005, 1, 14);
-
-        if(data.isBefore(primeiroPagamento)){
-            return false;
-        }
-
-        long dias = ChronoUnit.DAYS.between(primeiroPagamento, data);
-
-        return dias % 14 == 0;
+        return true;
     }
 
     /**
@@ -910,7 +807,7 @@ public class BancoDados {
      * @return o total da folha, formatado com vírgula
      */
     public String totalFolha(String data) {
-        LocalDate dataPagamento = validarData(data);
+        LocalDate dataPagamento = Utilitarios.validarData(data);
 
         BigDecimal totalFolha = BigDecimal.ZERO;
 
@@ -918,132 +815,11 @@ public class BancoDados {
             Empregado empregado = listaEmpregados.get(j);
 
             if(deveSerPago(empregado, data)){
-                BigDecimal pagamento;
-
-                if(empregado instanceof Horista){
-                    pagamento = calcularPagamentoHorista(empregado, dataPagamento);
-                }
-                else if(empregado instanceof Comissionado){
-                    pagamento = calcularPagamentoComissionado(empregado, dataPagamento);
-                }
-                else{
-                    pagamento = calcularPagamentoAssalariado(empregado);
-                }
-
-                totalFolha = totalFolha.add(pagamento);
+                totalFolha = totalFolha.add(empregado.calcularPagamento(dataPagamento));
             }
         }
 
-        return formatarDinheiro(totalFolha);
-    }
-
-    /**
-     * Calcula o pagamento bruto de um empregado horista para os 7
-     * dias que terminam em {@code dataPagamento}: horas normais ao
-     * valor da hora, mais horas extras a 1,5x o valor da hora.
-     *
-     * @param empregado empregado horista
-     * @param dataPagamento data do pagamento
-     * @return o valor bruto a pagar
-     */
-    private BigDecimal calcularPagamentoHorista(Empregado empregado, LocalDate dataPagamento){
-        BigDecimal salarioHora = new BigDecimal(empregado.getSalario().replace(",", "."));
-        BigDecimal normais = horasNormaisNoPeriodo(empregado, dataPagamento);
-        BigDecimal extras  = horasExtrasNoPeriodo(empregado, dataPagamento);
-
-        return normais.multiply(salarioHora)
-                .add(extras.multiply(salarioHora).multiply(new BigDecimal("1.5")));
-    }
-
-    /**
-     * Calcula o pagamento bruto de um empregado assalariado: o seu
-     * salário mensal fixo, sem cálculos adicionais.
-     *
-     * @param empregado empregado assalariado
-     * @return o valor bruto a pagar
-     */
-    private BigDecimal calcularPagamentoAssalariado(Empregado empregado){
-        return new BigDecimal(empregado.getSalario().replace(",", "."));
-    }
-
-    /**
-     * Calcula o pagamento bruto de um empregado comissionado para os
-     * 14 dias que terminam em {@code dataPagamento}: o salário fixo
-     * quinzenal (salário mensal * 12 / 26) somado à comissão sobre o
-     * total vendido no período.
-     *
-     * @param empregado empregado comissionado
-     * @param dataPagamento data do pagamento
-     * @return o valor bruto a pagar
-     */
-    private BigDecimal calcularPagamentoComissionado(Empregado empregado, LocalDate dataPagamento){
-        Comissionado comissionado = (Comissionado) empregado;
-
-        BigDecimal salario = new BigDecimal(comissionado.getSalario().replace(",", "."));
-        BigDecimal percentualComissao = new BigDecimal(comissionado.getComissao().replace(",", "."));
-        BigDecimal salarioDuasSemanas = salario.multiply(new BigDecimal("12")).divide(new BigDecimal("26"), 10, BigDecimal.ROUND_DOWN);
-
-        salarioDuasSemanas = salarioDuasSemanas.setScale(2, BigDecimal.ROUND_DOWN);
-
-        LocalDate inicio = dataPagamento.minusDays(13);
-
-        BigDecimal totalVendas = BigDecimal.ZERO;
-
-        for(int j = 0; j < comissionado.getListaVendas().size(); j++){
-            Venda venda = comissionado.getListaVendas().get(j);
-
-            LocalDate dataVenda = validarData(venda.getData());
-
-            if(!dataVenda.isBefore(inicio) && !dataVenda.isAfter(dataPagamento)){
-                BigDecimal valorVenda = new BigDecimal(venda.getValor().replace(",", "."));
-
-                totalVendas = totalVendas.add(valorVenda);
-            }
-        }
-
-        BigDecimal comissao = totalVendas.multiply(percentualComissao).setScale(2, BigDecimal.ROUND_DOWN);
-
-        return salarioDuasSemanas.add(comissao);
-    }
-
-    /**
-     * Aplica o desconto de taxa sindical diária ao pagamento bruto de
-     * um empregado sindicalizado, proporcional aos dias do período de
-     * pagamento correspondente ao seu tipo.
-     *
-     * @param empregado empregado a descontar
-     * @param pagamento valor bruto antes do desconto
-     * @param dataPagamento data do pagamento
-     * @return o valor com o desconto de taxa sindical aplicado
-     */
-    private BigDecimal aplicarDescontosSindicais(Empregado empregado, BigDecimal pagamento,
-                                                 LocalDate dataPagamento){
-        if(!empregado.getSindicalizado().equals("true")){
-            return pagamento;
-        }
-
-        LocalDate inicio;
-
-        if(empregado instanceof Horista){
-            inicio = dataPagamento.minusDays(6);
-        }
-        else if(empregado instanceof Comissionado){
-            inicio = dataPagamento.minusDays(13);
-        }
-        else{
-            inicio = dataPagamento.withDayOfMonth(1);
-        }
-
-        if(empregado.getTaxaSindical() != null){
-            BigDecimal taxaDiaria = new BigDecimal(empregado.getTaxaSindical().replace(",", "."));
-
-            long quantidadeDias = ChronoUnit.DAYS.between(inicio, dataPagamento) + 1;
-
-            BigDecimal taxaSindical = taxaDiaria.multiply(BigDecimal.valueOf(quantidadeDias));
-
-            pagamento = pagamento.subtract(taxaSindical);
-        }
-        return pagamento;
+        return Utilitarios.formatarDinheiro(totalFolha);
     }
 
     /**
@@ -1057,20 +833,9 @@ public class BancoDados {
      */
     private BigDecimal calcularDescontos(Empregado empregado, LocalDate dataPagamento){
         BigDecimal descontos = BigDecimal.ZERO;
+        LocalDate inicio = empregado.inicioPeriodo(dataPagamento);
 
-        if(empregado.getSindicalizado().equals("true") && empregado.getTaxaSindical() != null){
-
-            LocalDate inicio;
-
-            if(empregado instanceof Horista){
-                inicio = dataPagamento.minusDays(6);
-            }
-            else if(empregado instanceof Comissionado){
-                inicio = dataPagamento.minusDays(13);
-            }
-            else{
-                inicio = dataPagamento.withDayOfMonth(1);
-            }
+        if(empregado.isSindicalizado() && empregado.getTaxaSindical() != null){
 
             long dias = ChronoUnit.DAYS.between(inicio, dataPagamento) + 1;
 
@@ -1079,24 +844,12 @@ public class BancoDados {
             descontos = descontos.add(taxa.multiply(BigDecimal.valueOf(dias)));
         }
 
-        LocalDate inicioPeriodo;
-
-        if(empregado instanceof Horista){
-            inicioPeriodo = dataPagamento.minusDays(6);
-        }
-        else if(empregado instanceof Comissionado){
-            inicioPeriodo = dataPagamento.minusDays(13);
-        }
-        else{
-            inicioPeriodo = dataPagamento.withDayOfMonth(1);
-        }
-
         for(int j = 0; j < empregado.getListaTaxaServico().size(); j++){
             TaxaServico taxaServico = empregado.getListaTaxaServico().get(j);
 
-            LocalDate dataTaxa = validarData(taxaServico.getData());
+            LocalDate dataTaxa = Utilitarios.validarData(taxaServico.getData());
 
-            if(!dataTaxa.isBefore(inicioPeriodo) && dataTaxa.isBefore(dataPagamento)){
+            if(!dataTaxa.isBefore(inicio) && dataTaxa.isBefore(dataPagamento)){
                 BigDecimal valor = new BigDecimal(taxaServico.getValor().replace(",", "."));
 
                 descontos = descontos.add(valor);
@@ -1137,10 +890,9 @@ public class BancoDados {
      *
      * @param data data de referência da folha, "dd/mm/aaaa"
      * @param saida caminho do arquivo de saída a ser gerado
-     * @throws Exception se a data for inválida ou ocorrer erro de escrita
      */
     public void rodaFolha(String data, String saida) throws IOException  {
-        LocalDate dataPagamento = validarData(data);
+        LocalDate dataPagamento = Utilitarios.validarData(data);
 
         salvarEstado();
 
@@ -1174,73 +926,74 @@ public class BancoDados {
             BigDecimal totalDescontosHoristas = BigDecimal.ZERO;
             BigDecimal totalLiquidoHoristas = BigDecimal.ZERO;
 
-            if (dataPagamento.getDayOfWeek().getValue() == 5) {
-                for (int j = 0; j < ordenados.size(); j++) {
-                    Empregado empregado = ordenados.get(j);
+            for (int j = 0; j < ordenados.size(); j++) {
+                Empregado empregado = ordenados.get(j);
 
-                    if (empregado instanceof Horista) {
-                        LocalDate inicio = dataPagamento.minusDays(6);
+                if (empregado instanceof Horista && empregado.getAgenda().ehDiaDePagamento(dataPagamento)) {
+                    LocalDate inicio = empregado.inicioPeriodo(dataPagamento);
 
-                        BigDecimal horasNormais = horasNormaisNoPeriodo(empregado, dataPagamento);
-                        BigDecimal horasExtras  = horasExtrasNoPeriodo(empregado, dataPagamento);
-                        BigDecimal bruto = calcularPagamentoHorista(empregado, dataPagamento);
+                    Horista horista = (Horista) empregado;
 
-                        BigDecimal taxasServicoPeriodo = BigDecimal.ZERO;
-                        for (int k = 0; k < empregado.getListaTaxaServico().size(); k++) {
-                            TaxaServico ts = empregado.getListaTaxaServico().get(k);
-                            LocalDate dataTaxa = validarData(ts.getData());
-                            if (!dataTaxa.isBefore(inicio) && dataTaxa.isBefore(dataPagamento)) {
-                                taxasServicoPeriodo = taxasServicoPeriodo.add(new BigDecimal(ts.getValor()
-                                        .replace(",", ".")));
-                            }
+                    BigDecimal horasNormais = horista.horasNormaisNoPeriodo(dataPagamento);
+                    BigDecimal horasExtras  = horista.horasExtrasNoPeriodo(dataPagamento);
+                    BigDecimal bruto = horista.calcularPagamento(dataPagamento);
+
+                    BigDecimal taxasServicoPeriodo = BigDecimal.ZERO;
+                    for (int k = 0; k < empregado.getListaTaxaServico().size(); k++) {
+                        TaxaServico ts = empregado.getListaTaxaServico().get(k);
+                        LocalDate dataTaxa = Utilitarios.validarData(ts.getData());
+                        if (!dataTaxa.isBefore(inicio) && dataTaxa.isBefore(dataPagamento)) {
+                            taxasServicoPeriodo = taxasServicoPeriodo.add(new BigDecimal(ts.getValor()
+                                    .replace(",", ".")));
                         }
-
-                        BigDecimal devidoSemana = BigDecimal.ZERO;
-                        if (empregado.getSindicalizado().equals("true") && empregado.getTaxaSindical() != null) {
-                            BigDecimal taxaDiaria = new BigDecimal(empregado.getTaxaSindical().replace(","
-                                    , "."));
-                            devidoSemana = taxaDiaria.multiply(BigDecimal.valueOf(7));
-                        }
-
-                        BigDecimal dividaAnterior = empregado.getDescontosPendentes() == null ? BigDecimal.ZERO :
-                                empregado.getDescontosPendentes();
-                        BigDecimal totalDevido = devidoSemana.add(dividaAnterior).add(taxasServicoPeriodo);
-
-                        BigDecimal descontos;
-                        BigDecimal liquido;
-
-                        if (bruto.compareTo(totalDevido) >= 0) {
-                            descontos = totalDevido;
-                            liquido = bruto.subtract(descontos);
-                            empregado.setDescontosPendentes(BigDecimal.ZERO);
-                        } else {
-                            descontos = bruto;
-                            liquido = BigDecimal.ZERO;
-                            empregado.setDescontosPendentes(totalDevido.subtract(bruto));
-                        }
-
-                        totalHorasNormais = totalHorasNormais.add(horasNormais);
-                        totalHorasExtras = totalHorasExtras.add(horasExtras);
-                        totalBrutoHoristas = totalBrutoHoristas.add(bruto);
-                        totalDescontosHoristas = totalDescontosHoristas.add(descontos);
-                        totalLiquidoHoristas = totalLiquidoHoristas.add(liquido);
-
-                        String metodo = formatarMetodoPagamento(empregado);
-
-                        writer.write(String.format(Locale.US, "%-36s %5s %5s %13s %9s %15s %-38s",
-                                empregado.getNome(), formatarHoras(horasNormais)
-                                , formatarHoras(horasExtras),
-                                formatarDinheiro(bruto), formatarDinheiro(descontos), formatarDinheiro(liquido),
-                                metodo));
-                        writer.newLine();
                     }
+
+                    BigDecimal devidoSemana = BigDecimal.ZERO;
+                    if (empregado.isSindicalizado() && empregado.getTaxaSindical() != null) {
+                        BigDecimal taxaDiaria = new BigDecimal(empregado.getTaxaSindical().replace(","
+                                , "."));
+                        long diasNoPeriodo = ChronoUnit.DAYS.between(inicio, dataPagamento) + 1;
+                        devidoSemana = taxaDiaria.multiply(BigDecimal.valueOf(diasNoPeriodo));
+                    }
+
+                    BigDecimal dividaAnterior = empregado.getDescontosPendentes() == null ? BigDecimal.ZERO :
+                            empregado.getDescontosPendentes();
+                    BigDecimal totalDevido = devidoSemana.add(dividaAnterior).add(taxasServicoPeriodo);
+
+                    BigDecimal descontos;
+                    BigDecimal liquido;
+
+                    if (bruto.compareTo(totalDevido) >= 0) {
+                        descontos = totalDevido;
+                        liquido = bruto.subtract(descontos);
+                        empregado.setDescontosPendentes(BigDecimal.ZERO);
+                    } else {
+                        descontos = bruto;
+                        liquido = BigDecimal.ZERO;
+                        empregado.setDescontosPendentes(totalDevido.subtract(bruto));
+                    }
+
+                    totalHorasNormais = totalHorasNormais.add(horasNormais);
+                    totalHorasExtras = totalHorasExtras.add(horasExtras);
+                    totalBrutoHoristas = totalBrutoHoristas.add(bruto);
+                    totalDescontosHoristas = totalDescontosHoristas.add(descontos);
+                    totalLiquidoHoristas = totalLiquidoHoristas.add(liquido);
+
+                    String metodo = formatarMetodoPagamento(empregado);
+
+                    writer.write(String.format(Locale.US, "%-36s %5s %5s %13s %9s %15s %-38s",
+                            empregado.getNome(), Utilitarios.formatarHoras(horasNormais)
+                            , Utilitarios.formatarHoras(horasExtras),
+                            Utilitarios.formatarDinheiro(bruto), Utilitarios.formatarDinheiro(descontos), Utilitarios.formatarDinheiro(liquido),
+                            metodo));
+                    writer.newLine();
                 }
             }
 
             writer.newLine();
 
-            writer.write(String.format(Locale.US, "TOTAL HORISTAS %27s %5s %13s %9s %15s", formatarHoras(totalHorasNormais)
-                    , formatarHoras(totalHorasExtras), formatarDinheiro(totalBrutoHoristas), formatarDinheiro(totalDescontosHoristas), formatarDinheiro(totalLiquidoHoristas)));
+            writer.write(String.format(Locale.US, "TOTAL HORISTAS %27s %5s %13s %9s %15s", Utilitarios.formatarHoras(totalHorasNormais)
+                    , Utilitarios.formatarHoras(totalHorasExtras), Utilitarios.formatarDinheiro(totalBrutoHoristas), Utilitarios.formatarDinheiro(totalDescontosHoristas), Utilitarios.formatarDinheiro(totalLiquidoHoristas)));
             writer.newLine();
             writer.newLine();
 
@@ -1265,7 +1018,7 @@ public class BancoDados {
                 Empregado empregado = ordenados.get(j);
 
                 if(empregado instanceof Assalariado && deveSerPago(empregado, data)){
-                    BigDecimal bruto = calcularPagamentoAssalariado(empregado);
+                    BigDecimal bruto = empregado.calcularPagamento(dataPagamento);
                     BigDecimal descontos = calcularDescontos(empregado, dataPagamento);
                     BigDecimal liquido = bruto.subtract(descontos);
 
@@ -1274,7 +1027,7 @@ public class BancoDados {
                     totalLiquidoAssalariados = totalLiquidoAssalariados.add(liquido);
 
                     writer.write(String.format(Locale.US, "%-48s %13s %9s %15s %-38s", empregado.getNome(),
-                            formatarDinheiro(bruto), formatarDinheiro(descontos), formatarDinheiro(liquido), formatarMetodoPagamento(empregado)));
+                            Utilitarios.formatarDinheiro(bruto), Utilitarios.formatarDinheiro(descontos), Utilitarios.formatarDinheiro(liquido), formatarMetodoPagamento(empregado)));
 
                     writer.newLine();
                 }
@@ -1283,8 +1036,8 @@ public class BancoDados {
             writer.newLine();
 
             writer.write(String.format(Locale.US, "TOTAL ASSALARIADOS %43s %9s %15s",
-                    formatarDinheiro(totalBrutoAssalariados), formatarDinheiro(totalDescontosAssalariados),
-                    formatarDinheiro(totalLiquidoAssalariados)));            writer.newLine();
+                    Utilitarios.formatarDinheiro(totalBrutoAssalariados), Utilitarios.formatarDinheiro(totalDescontosAssalariados),
+                    Utilitarios.formatarDinheiro(totalLiquidoAssalariados)));            writer.newLine();
             writer.newLine();
 
             writer.write("===============================================================================================================================");
@@ -1313,28 +1066,9 @@ public class BancoDados {
                 if(empregado instanceof Comissionado && deveSerPago(empregado, data)){
                     Comissionado comissionado = (Comissionado) empregado;
 
-                    BigDecimal fixo = new BigDecimal(empregado.getSalario().replace(",", "."))
-                            .multiply(new BigDecimal("12")).divide(new BigDecimal("26"), 10,
-                                    BigDecimal.ROUND_DOWN);
-
-                    fixo = fixo.setScale(2, BigDecimal.ROUND_DOWN);
-
-                    LocalDate inicio = dataPagamento.minusDays(13);
-
-                    BigDecimal vendas = BigDecimal.ZERO;
-
-                    for(int k = 0; k < empregado.getListaVendas().size(); k++){
-                        Venda venda = empregado.getListaVendas().get(k);
-                        LocalDate dataVenda = validarData(venda.getData());
-
-                        if(!dataVenda.isBefore(inicio) && !dataVenda.isAfter(dataPagamento)){
-                            vendas = vendas.add(new BigDecimal(venda.getValor().replace(",", ".")));
-                        }
-                    }
-
-                    BigDecimal percentual = new BigDecimal(comissionado.getComissao().replace(",",
-                            "."));
-                    BigDecimal comissao = vendas.multiply(percentual).setScale(2, BigDecimal.ROUND_DOWN);
+                    BigDecimal fixo = comissionado.salarioFixo();
+                    BigDecimal vendas = comissionado.vendasNoPeriodo(dataPagamento);
+                    BigDecimal comissao = comissionado.valorComissao(dataPagamento);
                     BigDecimal bruto = fixo.add(comissao);
                     BigDecimal descontos = calcularDescontos(empregado, dataPagamento);
                     BigDecimal liquido = bruto.subtract(descontos);
@@ -1347,9 +1081,9 @@ public class BancoDados {
                     totalLiquidoComissionados = totalLiquidoComissionados.add(liquido);
 
                     writer.write(String.format(Locale.US, "%-21s %8s %8s %8s %13s %9s %15s %-38s",
-                            empregado.getNome(), formatarDinheiro(fixo), formatarDinheiro(vendas),
-                            formatarDinheiro(comissao), formatarDinheiro(bruto), formatarDinheiro(descontos),
-                            formatarDinheiro(liquido), formatarMetodoPagamento(empregado)));
+                            empregado.getNome(), Utilitarios.formatarDinheiro(fixo), Utilitarios.formatarDinheiro(vendas),
+                            Utilitarios.formatarDinheiro(comissao), Utilitarios.formatarDinheiro(bruto), Utilitarios.formatarDinheiro(descontos),
+                            Utilitarios.formatarDinheiro(liquido), formatarMetodoPagamento(empregado)));
 
                     writer.newLine();
                 }
@@ -1358,16 +1092,16 @@ public class BancoDados {
             writer.newLine();
 
             writer.write(String.format(Locale.US, "TOTAL COMISSIONADOS %10s %8s %8s %13s %9s %15s",
-                    formatarDinheiro(totalFixo), formatarDinheiro(totalVendas), formatarDinheiro(totalComissao),
-                    formatarDinheiro(totalBrutoComissionados), formatarDinheiro(totalDescontosComissionados),
-                    formatarDinheiro(totalLiquidoComissionados)));
+                    Utilitarios.formatarDinheiro(totalFixo), Utilitarios.formatarDinheiro(totalVendas), Utilitarios.formatarDinheiro(totalComissao),
+                    Utilitarios.formatarDinheiro(totalBrutoComissionados), Utilitarios.formatarDinheiro(totalDescontosComissionados),
+                    Utilitarios.formatarDinheiro(totalLiquidoComissionados)));
 
             writer.newLine();
             writer.newLine();
 
             BigDecimal totalFolha = totalBrutoHoristas.add(totalBrutoAssalariados).add(totalBrutoComissionados);
 
-            writer.write("TOTAL FOLHA: " + formatarDinheiro(totalFolha));
+            writer.write("TOTAL FOLHA: " + Utilitarios.formatarDinheiro(totalFolha));
 
             writer.newLine();
         }
@@ -1379,7 +1113,6 @@ public class BancoDados {
      * {@link #redo()}.
      *
      * @throws NaoHaComandoADesfazerException se não houver comando a desfazer
-     * @throws Exception se ocorrer erro ao restaurar o estado
      */
     public void undo() {
         if (pilhaUndo.empty()) throw new NaoHaComandoADesfazerException();
@@ -1401,7 +1134,6 @@ public class BancoDados {
      * o estado que havia sido descartado.
      *
      * @throws NaoHaComandoARefazerException se não houver comando a refazer
-     * @throws Exception se ocorrer erro ao restaurar o estado
      */
     public void redo() {
         if (pilhaRedo.empty()) throw new NaoHaComandoARefazerException();
@@ -1427,6 +1159,7 @@ public class BancoDados {
         try (ObjectOutputStream saida = new ObjectOutputStream(new FileOutputStream(arquivo))) {
             saida.writeInt(contador);
             saida.writeObject(new ArrayList<>(listaEmpregados));
+            saida.writeObject(new ArrayList<>(agendasDisponiveis));
         }
     }
 
@@ -1435,6 +1168,8 @@ public class BancoDados {
         try (ObjectInputStream entrada = new ObjectInputStream(new FileInputStream(arquivo))) {
             contador = entrada.readInt();
             listaEmpregados.addAll((List<Empregado>) entrada.readObject());
+            agendasDisponiveis.clear();
+            agendasDisponiveis.addAll((List<AgendaPagamento>) entrada.readObject());
         }
     }
 }

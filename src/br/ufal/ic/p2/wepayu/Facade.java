@@ -359,14 +359,14 @@ public class Facade {
             return empregado.getMetodoPagamento();
         }
         else if(atributo.equals("sindicalizado")){
-            return empregado.getSindicalizado();
+            return String.valueOf(empregado.isSindicalizado());
         }
         else if(atributo.equals("idSindicato")){
-            if(!empregado.getSindicalizado().equals("true")) throw new EmpregadoNaoEhSindicalizadoException();
+            if(!empregado.isSindicalizado()) throw new EmpregadoNaoEhSindicalizadoException();
             return empregado.getIdSindicato();
         }
         else if(atributo.equals("taxaSindical")){
-            if(!empregado.getSindicalizado().equals("true")) throw new EmpregadoNaoEhSindicalizadoException();
+            if(!empregado.isSindicalizado()) throw new EmpregadoNaoEhSindicalizadoException();
             return empregado.getTaxaSindical();
         }
         else if(atributo.equals("banco")){
@@ -384,6 +384,9 @@ public class Facade {
         else if(atributo.equals("comissao")){
             if(!(empregado instanceof Comissionado)) throw new EmpregadoNaoEhComissionadoException();
             return ((Comissionado) empregado).getComissao();
+        }
+        else if(atributo.equals("agendaPagamento")){
+            return empregado.getAgenda().getDescricao();
         }
         throw new AtributoNaoExisteException();
     }

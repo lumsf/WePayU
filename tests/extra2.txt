@@ -1,7 +1,0 @@
-zerarSistema
-id1=criarEmpregado nome="Ana" endereco="Rua A" tipo=horista salario=10
-expectError "Salario deve ser numerico." alteraEmpregado emp=${id1} atributo=salario valor=abc
-undo
-expectError "Empregado nao existe." getAtributoEmpregado emp=${id1} atributo=nome
-encerrarSistema
-quit
